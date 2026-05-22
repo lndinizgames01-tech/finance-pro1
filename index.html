@@ -15,6 +15,9 @@
 <link rel="apple-touch-icon" href="icon-192.png">
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -390,6 +393,7 @@ tbody tr:hover .name-initial{transform:scale(1.15);box-shadow:0 4px 20px rgba(96
   <div class="logo">
     <div class="logo-icon">💰</div>
     <span class="logo-text">FINANCE</span>
+    <span id="syncStatus" style="font-size:10px;font-weight:600;color:var(--muted);letter-spacing:.03em;margin-left:4px"></span>
   </div>
   <div class="header-right">
     <button class="btn btn-ghost btn-sm" onclick="openJurosConfig()">⚙️ Juros</button>
@@ -658,20 +662,109 @@ const FORMA_LABEL = {dinheiro:'💵 Dinheiro',pix:'⚡ PIX',credito:'💳 Crédi
 
 let debtors = [];
 let config = { taxaJurosDefault: 20 };
+
+// ── Carrega localStorage como cache inicial (para exibir rápido enquanto busca nuvem) ──
 try {
   const raw = localStorage.getItem(STORAGE_KEY);
   if (raw) { const p = JSON.parse(raw); debtors = p.debtors || p || []; config = p.config || config; }
 } catch(e) {}
 try {
   const old = localStorage.getItem('cobrancas_pro_v2');
-  if (old && debtors.length===0) { debtors=JSON.parse(old); debtors.forEach(d=>{if(!d.installmentLog)d.installmentLog={};}); save(); }
+  if (old && debtors.length===0) { debtors=JSON.parse(old); debtors.forEach(d=>{if(!d.installmentLog)d.installmentLog={};}); }
 } catch(e) {}
 
 let editingId=null, tipoSelecionado='unico', formaSelecionada='dinheiro', jurosAplicado=false, modoParcelamento='igual';
 let azFiltro='', clientCalId=null, clientCalYear=new Date().getFullYear(), calYear=new Date().getFullYear();
 let exportClienteMode='todos', exportPeriodoMode='todos';
+let _isSyncing = false;
 
-function save(){ localStorage.setItem(STORAGE_KEY, JSON.stringify({debtors,config})); }
+// ══════════════════════════════════════════
+//  FIREBASE — Banco de Dados na Nuvem
+// ══════════════════════════════════════════
+const firebaseConfig = {
+  apiKey: "AIzaSyDLxs41Exa5LrLuyMhblTsXYf7B0gzazNk",
+  authDomain: "finance-pro1-7521b.firebaseapp.com",
+  projectId: "finance-pro1-7521b",
+  storageBucket: "finance-pro1-7521b.firebasestorage.app",
+  messagingSenderId: "689348729888",
+  appId: "1:689348729888:web:beeea5a7fef6f0d9297045"
+};
+
+firebase.initializeApp(firebaseConfig);
+const _db = firebase.firestore();
+const _docRef = _db.collection('finance').doc('dados');
+
+function setSyncStatus(status) {
+  const el = document.getElementById('syncStatus');
+  if (!el) return;
+  const map = {
+    saving:  '☁️ Salvando...',
+    saved:   '☁️ Salvo',
+    loading: '☁️ Carregando...',
+    error:   '⚠️ Offline',
+    synced:  '🔄 Sincronizado'
+  };
+  const colors = { saving:'var(--muted)', saved:'var(--green)', loading:'var(--accent)', error:'var(--red)', synced:'var(--accent)' };
+  el.textContent = map[status] || '';
+  el.style.color = colors[status] || 'var(--muted)';
+}
+
+async function saveToCloud() {
+  try {
+    setSyncStatus('saving');
+    await _docRef.set({ debtors, config, updatedAt: new Date().toISOString() });
+    setSyncStatus('saved');
+  } catch(e) {
+    setSyncStatus('error');
+    console.warn('Falha ao salvar na nuvem (modo offline):', e.message);
+  }
+}
+
+async function loadFromCloud() {
+  try {
+    setSyncStatus('loading');
+    const doc = await _docRef.get();
+    if (doc.exists) {
+      const data = doc.data();
+      debtors = data.debtors || [];
+      config  = data.config  || { taxaJurosDefault: 20 };
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ debtors, config }));
+      setSyncStatus('saved');
+      renderStats(); renderTable(); buildAZIndex();
+    } else {
+      // Primeira vez: sobe o que estava no localStorage para a nuvem
+      if (debtors.length > 0) await saveToCloud();
+      else setSyncStatus('saved');
+    }
+  } catch(e) {
+    setSyncStatus('error');
+    console.warn('Usando dados locais (sem conexão):', e.message);
+  }
+}
+
+// Escuta mudanças em tempo real (sincroniza entre dispositivos automaticamente)
+function startRealtimeSync() {
+  _docRef.onSnapshot((doc) => {
+    if (!doc.exists || _isSyncing) return;
+    const data = doc.data();
+    const remoto = JSON.stringify(data.debtors || []);
+    const local   = JSON.stringify(debtors);
+    if (remoto !== local) {
+      debtors = data.debtors || [];
+      config  = data.config  || config;
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ debtors, config }));
+      renderStats(); renderTable(); buildAZIndex();
+      setSyncStatus('synced');
+      setTimeout(() => setSyncStatus('saved'), 2500);
+    }
+  }, (err) => { setSyncStatus('error'); });
+}
+
+function save() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify({ debtors, config }));
+  _isSyncing = true;
+  saveToCloud().finally(() => { _isSyncing = false; });
+}
 function today(){ return new Date().toISOString().split('T')[0]; }
 function fmtDate(d){ if(!d)return '—'; const[y,m,dia]=d.split('-'); return `${dia}/${m}/${y}`; }
 function fmtBRL(v){ return 'R$ '+Number(v).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}); }
@@ -1950,6 +2043,9 @@ function updateThemeIcon(isLight){
 // ══════════════════════════════════════════
 initTheme();
 buildDateDropdowns(); buildAZIndex(); renderStats(); renderTable();
+
+// Carrega da nuvem e ativa sincronização em tempo real
+loadFromCloud().then(() => startRealtimeSync());
 </script>
 
 <script>
