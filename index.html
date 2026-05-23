@@ -345,90 +345,124 @@ tbody tr:hover .name-initial{transform:scale(1.15);box-shadow:0 4px 20px rgba(96
 /* ── TELA DE LOGIN ── */
 #loginScreen{
   position:fixed;inset:0;z-index:9999;
-  display:flex;align-items:center;justify-content:center;
-  background:#0d1117;
-  background-image:url('https://images.unsplash.com/photo-1483728642387-6c3bdd6c93e5?w=1920&q=80');
-  background-size:cover;background-position:center 60%;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  background:#1a1f18;
+  background-image:url('https://images.unsplash.com/photo-1448375240586-882707db888b?w=1920&q=80');
+  background-size:cover;
+  background-position:center center;
+  overflow:hidden;
 }
 #loginScreen::before{
-  content:'';position:absolute;inset:0;
+  content:'';position:absolute;inset:0;z-index:0;
   background:linear-gradient(
-    to bottom,
-    rgba(18,14,10,.55) 0%,
-    rgba(12,10,8,.78) 50%,
-    rgba(8,7,5,.92) 100%
+    180deg,
+    rgba(15,18,14,.18) 0%,
+    rgba(15,18,14,.45) 40%,
+    rgba(15,18,14,.72) 70%,
+    rgba(15,18,14,.88) 100%
   );
-  z-index:0;
 }
+
+/* ── TÍTULO GIGANTE com floresta aparecendo pelas letras ── */
+.login-hero{
+  position:relative;z-index:1;
+  text-align:center;
+  width:100%;
+  padding:0 1rem;
+  user-select:none;
+  pointer-events:none;
+  margin-bottom:1.8rem;
+}
+.login-hero-text{
+  font-family:'Syne',sans-serif;
+  font-size:clamp(3.8rem, 18vw, 10rem);
+  font-weight:800;
+  letter-spacing:.04em;
+  line-height:1;
+  text-transform:uppercase;
+  /* Floresta aparecendo pelas letras */
+  background-image:url('https://images.unsplash.com/photo-1448375240586-882707db888b?w=1920&q=80');
+  background-size:cover;
+  background-position:center 25%;
+  -webkit-background-clip:text;
+  background-clip:text;
+  color:transparent;
+  filter:brightness(1.15) contrast(1.1) saturate(.9);
+  animation:loginFadeUp .9s cubic-bezier(.16,1,.3,1) both;
+}
+
+/* ── Subtítulos ── */
 .login-card{
   position:relative;z-index:1;
-  width:100%;max-width:340px;
   text-align:center;
-  padding:0 1.5rem;
-  animation:loginFadeUp .6s cubic-bezier(.16,1,.3,1) both;
+  width:100%;
+  max-width:480px;
+  padding:0 2rem;
+  animation:loginFadeUp .9s .12s cubic-bezier(.16,1,.3,1) both;
 }
-@keyframes loginFadeUp{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
+@keyframes loginFadeUp{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}
 
-/* Símbolo geométrico de moeda — estilo montanha/linha fina */
-.login-symbol{
-  margin:0 auto 2.4rem;
-  width:42px;height:42px;
-  display:flex;align-items:center;justify-content:center;
-}
-.login-symbol svg{width:42px;height:42px;opacity:.7}
-
+.login-symbol{display:none}
 .login-title{
   font-family:'Lato',sans-serif;
-  font-size:11px;font-weight:700;
-  letter-spacing:.22em;
-  text-transform:uppercase;
-  color:rgba(220,200,170,.4);
-  margin-bottom:2.8rem;
+  font-size:clamp(1rem,3.5vw,1.25rem);
+  font-weight:700;
+  color:#fff;
+  margin-bottom:.5rem;
+  letter-spacing:-.01em;
 }
-.login-sub{display:none}
-
-/* Linha divisória sutil */
-.login-divider{
-  width:32px;height:1px;
-  background:rgba(220,200,170,.18);
-  margin:0 auto 2.8rem;
+.login-sub{
+  display:block;
+  font-family:'Lato',sans-serif;
+  font-size:clamp(.8rem,2.5vw,.95rem);
+  font-weight:400;
+  color:rgba(255,255,255,.6);
+  margin-bottom:2rem;
+  letter-spacing:0;
 }
+.login-divider{display:none}
 
+/* ── Botão Google branco arredondado ── */
 .btn-google{
-  display:flex;align-items:center;justify-content:center;gap:10px;
-  width:100%;padding:12px 20px;
-  border-radius:6px;
-  background:transparent;
-  color:rgba(220,200,170,.65);
-  border:1px solid rgba(220,200,170,.2);
+  display:inline-flex;align-items:center;justify-content:center;gap:10px;
+  padding:14px 32px;
+  border-radius:100px;
+  background:#fff;
+  color:#1f1f1f;
+  border:none;
   cursor:pointer;
-  font-family:'Lato',sans-serif;font-size:12px;font-weight:700;
-  letter-spacing:.1em;text-transform:uppercase;
-  transition:all .3s ease;
-  backdrop-filter:blur(8px);
+  font-family:'Lato',sans-serif;
+  font-size:clamp(.85rem,2.5vw,1rem);
+  font-weight:700;
+  letter-spacing:.01em;
+  transition:all .25s ease;
+  box-shadow:0 4px 24px rgba(0,0,0,.35);
+  width:auto;
 }
 .btn-google:hover{
-  background:rgba(220,200,170,.07);
-  border-color:rgba(220,200,170,.38);
-  color:rgba(220,200,170,.95);
+  transform:translateY(-2px);
+  box-shadow:0 8px 32px rgba(0,0,0,.45);
+  background:#f5f5f5;
 }
-.btn-google:active{transform:scale(.98)}
-.btn-google svg{width:16px;height:16px;flex-shrink:0;opacity:.8}
+.btn-google:active{transform:scale(.97)}
+.btn-google svg{width:20px;height:20px;flex-shrink:0}
 
 .login-footer{
-  margin-top:2rem;
-  font-size:10px;
-  color:rgba(200,180,150,.2);
-  letter-spacing:.08em;
-  line-height:1.8;
+  margin-top:1.6rem;
+  font-size:11px;
+  color:rgba(255,255,255,.2);
+  letter-spacing:.06em;
+  line-height:2;
 }
-.login-loading{display:flex;flex-direction:column;align-items:center;gap:12px;color:#94a3b8;font-size:13px}
-.spinner{width:20px;height:20px;border:1.5px solid rgba(220,200,170,.15);border-top-color:rgba(220,200,170,.6);border-radius:50%;animation:spin .8s linear infinite}
+.login-loading{display:flex;flex-direction:column;align-items:center;gap:12px;color:#fff;font-size:13px}
+.spinner{width:20px;height:20px;border:2px solid rgba(255,255,255,.2);border-top-color:#fff;border-radius:50%;animation:spin .8s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
 .login-error{
-  margin-top:1.2rem;
-  font-size:11px;color:rgba(251,113,133,.7);
-  letter-spacing:.04em;display:none;
+  margin-top:1rem;font-size:12px;
+  color:rgba(255,120,120,.9);
+  letter-spacing:.02em;display:none;
+  background:rgba(0,0,0,.3);
+  padding:8px 14px;border-radius:8px;
 }
 
 /* ── USER INFO no header ── */
@@ -489,36 +523,33 @@ tbody tr:hover .name-initial{transform:scale(1.15);box-shadow:0 4px 20px rgba(96
 <!-- TELA DE LOGIN -->
 <div id="loginScreen">
 
-  <!-- Cruz flutuando no fundo, acima da paisagem — igual à referência -->
-  <div style="position:absolute;z-index:1;top:18%;left:50%;transform:translateX(-50%);pointer-events:none">
-    <svg viewBox="0 0 60 90" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:52px;height:78px;opacity:.28;filter:blur(0.4px)">
-      <line x1="30" y1="0" x2="30" y2="90" stroke="rgba(210,195,160,1)" stroke-width="5" stroke-linecap="square"/>
-      <line x1="4" y1="26" x2="56" y2="26" stroke="rgba(210,195,160,1)" stroke-width="5" stroke-linecap="square"/>
+  <!-- Cruz discreta no topo -->
+  <div style="position:absolute;z-index:1;top:7%;left:50%;transform:translateX(-50%);pointer-events:none">
+    <svg viewBox="0 0 40 60" fill="none" style="width:22px;height:33px;opacity:.18;filter:blur(.3px)">
+      <line x1="20" y1="0" x2="20" y2="60" stroke="#fff" stroke-width="5" stroke-linecap="square"/>
+      <line x1="2" y1="18" x2="38" y2="18" stroke="#fff" stroke-width="5" stroke-linecap="square"/>
     </svg>
   </div>
 
+  <!-- FINANCE PRO com floresta aparecendo pelas letras -->
+  <div class="login-hero">
+    <div class="login-hero-text">Finance Pro</div>
+  </div>
+
+  <!-- Subtítulo + botão -->
   <div class="login-card">
-
-    <!-- Símbolo geométrico de moeda / cifra -->
-    <div class="login-symbol">
-      <svg viewBox="0 0 42 42" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <circle cx="21" cy="21" r="19.5" stroke="rgba(220,200,160,0.45)" stroke-width="1"/>
-        <line x1="21" y1="10" x2="21" y2="32" stroke="rgba(220,200,160,0.4)" stroke-width="1" stroke-linecap="round"/>
-        <path d="M26 14.5C26 14.5 24 13 21 13C17.5 13 15 15 15 17.5C15 20 17 21 21 22C25 23 27 24.5 27 27C27 29.5 24.5 31 21 31C17.5 31 15.5 29.5 15.5 29.5" stroke="rgba(220,200,160,0.5)" stroke-width="1" stroke-linecap="round"/>
-      </svg>
-    </div>
-
-    <div class="login-title">Finance Pro</div>
-    <div class="login-divider"></div>
+    <div class="login-title">Gerencie suas finanças com inteligência</div>
+    <div class="login-sub">Acesse sua conta para começar</div>
 
     <button class="btn-google" onclick="loginGoogle()">
       <svg viewBox="0 0 48 48"><path fill="#FFC107" d="M43.611 20.083H42V20H24v8h11.303c-1.649 4.657-6.08 8-11.303 8-6.627 0-12-5.373-12-12s5.373-12 12-12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4 12.955 4 4 12.955 4 24s8.955 20 20 20 20-8.955 20-20c0-1.341-.138-2.65-.389-3.917z"/><path fill="#FF3D00" d="m6.306 14.691 6.571 4.819C14.655 15.108 18.961 12 24 12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4 16.318 4 9.656 8.337 6.306 14.691z"/><path fill="#4CAF50" d="M24 44c5.166 0 9.86-1.977 13.409-5.192l-6.19-5.238A11.91 11.91 0 0 1 24 36c-5.202 0-9.619-3.317-11.283-7.946l-6.522 5.025C9.505 39.556 16.227 44 24 44z"/><path fill="#1976D2" d="M43.611 20.083H42V20H24v8h11.303a12.04 12.04 0 0 1-4.087 5.571l.003-.002 6.19 5.238C36.971 39.205 44 34 44 24c0-1.341-.138-2.65-.389-3.917z"/></svg>
-      Continuar com Google
+      Login com Google
     </button>
 
     <div class="login-error" id="loginError"></div>
-    <div class="login-footer">acesso restrito · dados criptografados</div>
+    <div class="login-footer">acesso seguro · dados criptografados</div>
   </div>
+
 </div>
 
 <div class="header">
@@ -851,18 +882,43 @@ function setSyncStatus(status) {
 
 let _driveToken = null;
 
-// ── Login com Google ──
+// ── Login com Google (redirect — funciona em mobile, PWA e todos os navegadores) ──
 function loginGoogle() {
   const provider = new firebase.auth.GoogleAuthProvider();
   provider.addScope('https://www.googleapis.com/auth/drive.file');
-  _auth.signInWithPopup(provider).then(result => {
-    _driveToken = result.credential.accessToken;
-  }).catch(err => {
-    const errEl = document.getElementById('loginError');
-    errEl.textContent = 'Erro ao fazer login: ' + err.message;
-    errEl.style.display = 'block';
-  });
+  provider.setCustomParameters({ prompt: 'select_account' });
+
+  // Tenta popup (desktop); se bloqueado cai no redirect automaticamente
+  _auth.signInWithPopup(provider)
+    .then(result => {
+      _driveToken = result.credential?.accessToken || null;
+    })
+    .catch(err => {
+      // Popup bloqueado ou indisponível → usa redirect
+      if (err.code === 'auth/popup-blocked' ||
+          err.code === 'auth/popup-closed-by-user' ||
+          err.code === 'auth/cancelled-popup-request') {
+        _auth.signInWithRedirect(provider);
+        return;
+      }
+      const errEl = document.getElementById('loginError');
+      if (errEl) {
+        errEl.textContent = 'Erro: ' + (err.message || err.code);
+        errEl.style.display = 'block';
+      }
+    });
 }
+
+// Captura o resultado do redirect (quando volta ao site após login externo)
+_auth.getRedirectResult().then(result => {
+  if (result && result.credential) {
+    _driveToken = result.credential.accessToken || null;
+  }
+}).catch(err => {
+  if (err.code && err.code !== 'auth/no-auth-event') {
+    console.warn('Redirect result error:', err.code, err.message);
+  }
+});
 
 // ── Logout ──
 function logoutUser() {
