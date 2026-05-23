@@ -6,7 +6,7 @@
     <title>Finance Pro — Login</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400;1,500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         * {
             margin: 0;
@@ -24,7 +24,6 @@
             background: #0d1a0d;
         }
 
-        /* === FUNDO: Floresta verde densa === */
         .background {
             position: fixed;
             inset: 0;
@@ -34,7 +33,6 @@
             transition: transform 0.3s ease-out;
         }
 
-        /* === OVERLAY: Gradiente harmonioso === */
         .overlay {
             position: fixed;
             inset: 0;
@@ -44,7 +42,6 @@
             z-index: 1;
         }
 
-        /* === CONTAINER === */
         .login-container {
             position: relative;
             z-index: 2;
@@ -58,7 +55,6 @@
             gap: 6px;
         }
 
-        /* === TÍTULO: FINANCE PRO — interativo com fundo === */
         .title {
             font-family: 'Inter', sans-serif;
             font-size: clamp(2.4rem, 6vw, 4.2rem);
@@ -69,12 +65,9 @@
             text-transform: uppercase;
             position: relative;
             color: rgba(245, 250, 245, 0.85);
-            text-shadow: 
-                0 2px 20px rgba(0,0,0,0.5),
-                0 0 60px rgba(180,210,180,0.2);
+            text-shadow: 0 2px 20px rgba(0,0,0,0.5), 0 0 60px rgba(180,210,180,0.2);
         }
 
-        /* Efeito interativo: floresta brilhando através do texto */
         .title::after {
             content: 'FINANCE PRO';
             position: absolute;
@@ -85,13 +78,7 @@
             letter-spacing: inherit;
             line-height: inherit;
             text-transform: inherit;
-            background: linear-gradient(
-                180deg,
-                rgba(255,255,255,0.0) 0%,
-                rgba(255,255,255,0.0) 40%,
-                rgba(200,230,200,0.3) 70%,
-                rgba(160,200,160,0.5) 100%
-            );
+            background: linear-gradient(180deg, rgba(255,255,255,0.0) 0%, rgba(255,255,255,0.0) 40%, rgba(200,230,200,0.3) 70%, rgba(160,200,160,0.5) 100%);
             background-clip: text;
             -webkit-background-clip: text;
             color: transparent;
@@ -100,7 +87,6 @@
             pointer-events: none;
         }
 
-        /* === SUBTÍTULO: Mesma fonte leve da descrição === */
         .subtitle {
             font-family: 'Inter', sans-serif;
             font-weight: 300;
@@ -112,7 +98,6 @@
             line-height: 1.5;
         }
 
-        /* === DESCRIÇÃO === */
         .description {
             font-family: 'Inter', sans-serif;
             color: rgba(200, 220, 200, 0.55);
@@ -123,7 +108,6 @@
             letter-spacing: 0.02em;
         }
 
-        /* === BOTÃO GOOGLE === */
         .btn-google {
             display: inline-flex;
             align-items: center;
@@ -139,9 +123,7 @@
             font-family: 'Inter', sans-serif;
             cursor: pointer;
             transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
-            box-shadow: 
-                0 4px 20px rgba(0,0,0,0.25),
-                0 0 0 1px rgba(255,255,255,0.1);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.25), 0 0 0 1px rgba(255,255,255,0.1);
             text-decoration: none;
             letter-spacing: -0.01em;
             position: relative;
@@ -159,9 +141,7 @@
 
         .btn-google:hover {
             transform: translateY(-3px) scale(1.02);
-            box-shadow: 
-                0 12px 40px rgba(0,0,0,0.35),
-                0 0 0 1px rgba(255,255,255,0.15);
+            box-shadow: 0 12px 40px rgba(0,0,0,0.35), 0 0 0 1px rgba(255,255,255,0.15);
             background: #ffffff;
         }
 
@@ -171,6 +151,12 @@
 
         .btn-google:active {
             transform: translateY(-1px) scale(0.98);
+        }
+
+        .btn-google:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
         }
 
         .google-icon {
@@ -186,50 +172,93 @@
             z-index: 1;
         }
 
-        /* === RESPONSIVO === */
+        .user-info {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+            margin-top: 20px;
+        }
+
+        .user-info.active {
+            display: flex;
+        }
+
+        .user-avatar {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            border: 2px solid rgba(255,255,255,0.3);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        }
+
+        .user-name {
+            color: rgba(255,255,255,0.9);
+            font-size: 0.95rem;
+            font-weight: 500;
+            text-shadow: 0 2px 8px rgba(0,0,0,0.4);
+        }
+
+        .btn-logout {
+            background: transparent;
+            border: 1px solid rgba(255,255,255,0.2);
+            color: rgba(255,255,255,0.7);
+            padding: 8px 20px;
+            border-radius: 50px;
+            font-size: 0.8rem;
+            font-family: 'Inter', sans-serif;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-logout:hover {
+            background: rgba(255,255,255,0.1);
+            border-color: rgba(255,255,255,0.4);
+            color: rgba(255,255,255,0.9);
+        }
+
+        .error-msg {
+            color: rgba(255, 150, 150, 0.9);
+            font-size: 0.8rem;
+            margin-top: 12px;
+            text-shadow: 0 1px 4px rgba(0,0,0,0.5);
+            display: none;
+            max-width: 300px;
+            line-height: 1.4;
+        }
+
         @media (max-width: 480px) {
             .login-container {
                 padding: 20px;
                 width: 95%;
                 gap: 4px;
             }
-
             .title {
                 letter-spacing: 0.12em;
                 margin-bottom: 14px;
             }
-
             .subtitle {
                 margin-bottom: 2px;
             }
-
             .description {
                 margin-bottom: 28px;
             }
-
             .btn-google {
                 padding: 12px 28px;
                 gap: 10px;
                 width: 100%;
                 max-width: 260px;
             }
-
             .google-icon {
                 width: 16px;
                 height: 16px;
             }
         }
-
-        @media (min-width: 481px) and (max-width: 768px) {
-            .login-container {
-                padding: 22px;
-            }
-
-            .title {
-                letter-spacing: 0.14em;
-            }
-        }
     </style>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
 </head>
 <body>
     <div class="background"></div>
@@ -241,7 +270,7 @@
         <p class="subtitle">Gerencie suas finanças com inteligência</p>
         <p class="description">Acesse sua conta para começar</p>
 
-        <button class="btn-google" onclick="loginWithGoogle()">
+        <button class="btn-google" id="btnLogin" onclick="loginWithGoogle()">
             <svg class="google-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                 <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
                 <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
@@ -250,13 +279,137 @@
             </svg>
             <span class="btn-text">Login com Google</span>
         </button>
+
+        <div class="user-info" id="userInfo">
+            <img class="user-avatar" id="userAvatar" src="" alt="Avatar">
+            <span class="user-name" id="userName"></span>
+            <button class="btn-logout" onclick="logout()">Sair</button>
+        </div>
+
+        <p class="error-msg" id="errorMsg"></p>
     </div>
 
     <script>
-        function loginWithGoogle() {
-            console.log('Iniciando login com Google...');
+        // ============================================
+        // CONFIGURAÇÃO DO FIREBASE — SUAS CREDENCIAIS REAIS
+        // ============================================
+        const firebaseConfig = {
+            apiKey: "AIzaSyDLxs41Exa5LrLuyMhblTsXYf7B0gzazNk",
+            authDomain: "finance-pro1-7521b.firebaseapp.com",
+            projectId: "finance-pro1-7521b",
+            storageBucket: "finance-pro1-7521b.firebasestorage.app",
+            messagingSenderId: "689348729888",
+            appId: "1:689348729888:web:beeea5a7fef6f0d9297045"
+        };
+
+        // Inicializa Firebase
+        try {
+            firebase.initializeApp(firebaseConfig);
+            console.log("✅ Firebase inicializado com sucesso!");
+        } catch (e) {
+            console.error("❌ Erro ao inicializar Firebase:", e);
         }
 
+        const auth = firebase.auth();
+        const provider = new firebase.auth.GoogleAuthProvider();
+
+        // ============================================
+        // LOGIN COM GOOGLE
+        // ============================================
+        function loginWithGoogle() {
+            const btn = document.getElementById('btnLogin');
+            btn.disabled = true;
+            btn.querySelector('.btn-text').textContent = 'Conectando...';
+            hideError();
+
+            auth.signInWithPopup(provider)
+                .then((result) => {
+                    const user = result.user;
+                    console.log('✅ Login bem-sucedido:', user.displayName, user.email);
+                    showUser(user);
+                })
+                .catch((error) => {
+                    console.error('❌ Erro no login:', error.code, error.message);
+                    btn.disabled = false;
+                    btn.querySelector('.btn-text').textContent = 'Login com Google';
+
+                    let msg = 'Erro ao fazer login. Tente novamente.';
+                    if (error.code === 'auth/popup-closed-by-user') {
+                        msg = 'Você fechou a janela de login. Clique novamente.';
+                    } else if (error.code === 'auth/popup-blocked') {
+                        msg = 'O navegador bloqueou o popup. Permita popups para este site.';
+                    } else if (error.code === 'auth/unauthorized-domain') {
+                        msg = 'Domínio não autorizado. Adicione "lndinizgames01-tech.github.io" no Firebase Console → Authentication → Settings → Authorized domains.';
+                    } else if (error.code === 'auth/configuration-not-found') {
+                        msg = 'Firebase não configurado. Verifique se o Google Sign-in está ativado no Firebase Console.';
+                    } else if (error.code === 'auth/api-key-not-valid') {
+                        msg = 'API Key inválida. Verifique as credenciais do Firebase.';
+                    } else if (error.code === 'auth/network-request-failed') {
+                        msg = 'Erro de conexão. Verifique sua internet.';
+                    }
+                    showError(msg);
+                });
+        }
+
+        // ============================================
+        // LOGOUT
+        // ============================================
+        function logout() {
+            auth.signOut()
+                .then(() => {
+                    console.log('✅ Logout realizado');
+                    hideUser();
+                })
+                .catch((error) => {
+                    console.error('❌ Erro no logout:', error);
+                });
+        }
+
+        // ============================================
+        // MOSTRAR/ESCONDER USUÁRIO
+        // ============================================
+        function showUser(user) {
+            document.getElementById('btnLogin').style.display = 'none';
+            document.getElementById('userInfo').classList.add('active');
+            document.getElementById('userAvatar').src = user.photoURL || 'https://ui-avatars.com/api/?name=' + encodeURIComponent(user.displayName || 'User') + '&background=random';
+            document.getElementById('userName').textContent = user.displayName || user.email || 'Usuário';
+
+            // Redireciona para o dashboard após 2 segundos
+            setTimeout(() => {
+                window.location.href = 'dashboard.html';
+            }, 2000);
+        }
+
+        function hideUser() {
+            document.getElementById('btnLogin').style.display = 'inline-flex';
+            document.getElementById('btnLogin').disabled = false;
+            document.getElementById('btnLogin').querySelector('.btn-text').textContent = 'Login com Google';
+            document.getElementById('userInfo').classList.remove('active');
+        }
+
+        function showError(msg) {
+            const el = document.getElementById('errorMsg');
+            el.textContent = msg;
+            el.style.display = 'block';
+        }
+
+        function hideError() {
+            document.getElementById('errorMsg').style.display = 'none';
+        }
+
+        // ============================================
+        // VERIFICAR SE JÁ ESTÁ LOGADO
+        // ============================================
+        auth.onAuthStateChanged((user) => {
+            if (user) {
+                console.log('👤 Usuário já logado:', user.displayName);
+                showUser(user);
+            } else {
+                console.log('👤 Nenhum usuário logado');
+            }
+        });
+
+        // Parallax sutil no fundo
         document.addEventListener('mousemove', (e) => {
             const x = (e.clientX / window.innerWidth - 0.5) * 8;
             const y = (e.clientY / window.innerHeight - 0.5) * 8;
