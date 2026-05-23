@@ -785,10 +785,15 @@ function setSyncStatus(status) {
   el.style.color  = colors[status] || 'var(--muted)';
 }
 
+let _driveToken = null;
+
 // ── Login com Google ──
 function loginGoogle() {
   const provider = new firebase.auth.GoogleAuthProvider();
-  _auth.signInWithPopup(provider).catch(err => {
+  provider.addScope('https://www.googleapis.com/auth/drive.file');
+  _auth.signInWithPopup(provider).then(result => {
+    _driveToken = result.credential.accessToken;
+  }).catch(err => {
     const errEl = document.getElementById('loginError');
     errEl.textContent = 'Erro ao fazer login: ' + err.message;
     errEl.style.display = 'block';
@@ -1814,14 +1819,95 @@ function saveJurosConfig(){
 }
 
 // ══════════════════════════════════════════
-//  BACKUP JSON
+//  BACKUP JSON + GOOGLE DRIVE
 // ══════════════════════════════════════════
-function exportarDados(){
-  const bl=new Blob([JSON.stringify({debtors,config},null,2)],{type:'application/json'}),a=document.createElement('a');
-  a.href=URL.createObjectURL(bl);const d=new Date();
-  a.download=`backup_${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}.json`;
-  a.click(); showToast('🗂 Backup salvo!','green');
+const DRIVE_FILENAME = 'finance-pro-backup.json';
+
+async function getDriveToken() {
+  if (_driveToken) return _driveToken;
+  // Token expirado — pede re-autenticação silenciosa
+  const provider = new firebase.auth.GoogleAuthProvider();
+  provider.addScope('https://www.googleapis.com/auth/drive.file');
+  try {
+    const result = await _auth.currentUser.reauthenticateWithPopup(provider);
+    _driveToken = result.credential.accessToken;
+    return _driveToken;
+  } catch(e) {
+    throw new Error('Não foi possível obter acesso ao Drive. ' + e.message);
+  }
 }
+
+async function salvarNoDrive(jsonStr) {
+  const token = await getDriveToken();
+  const blob  = new Blob([jsonStr], { type: 'application/json' });
+
+  // Procura se já existe um arquivo de backup
+  const searchRes = await fetch(
+    `https://www.googleapis.com/drive/v3/files?q=name%3D'${DRIVE_FILENAME}'+and+trashed%3Dfalse&spaces=drive&fields=files(id,name)`,
+    { headers: { Authorization: `Bearer ${token}` } }
+  );
+  if (!searchRes.ok) {
+    if (searchRes.status === 401) { _driveToken = null; throw new Error('Sessão expirada. Tente novamente.'); }
+    throw new Error('Erro ao acessar Drive: ' + searchRes.status);
+  }
+  const searchData = await searchRes.json();
+
+  const meta = JSON.stringify({ name: DRIVE_FILENAME, mimeType: 'application/json' });
+  const form = new FormData();
+  form.append('metadata', new Blob([meta], { type: 'application/json' }));
+  form.append('file', blob);
+
+  let res;
+  if (searchData.files && searchData.files.length > 0) {
+    // Atualiza arquivo existente
+    const fileId = searchData.files[0].id;
+    const updateForm = new FormData();
+    updateForm.append('file', blob);
+    res = await fetch(
+      `https://www.googleapis.com/upload/drive/v3/files/${fileId}?uploadType=media`,
+      { method: 'PATCH', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }, body: jsonStr }
+    );
+  } else {
+    // Cria novo arquivo
+    res = await fetch(
+      'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart',
+      { method: 'POST', headers: { Authorization: `Bearer ${token}` }, body: form }
+    );
+  }
+
+  if (!res.ok) {
+    if (res.status === 401) { _driveToken = null; throw new Error('Sessão expirada. Tente novamente.'); }
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error?.message || 'Erro ao salvar no Drive: ' + res.status);
+  }
+  return await res.json();
+}
+
+async function salvarFinanceCompleto() {
+  const d   = new Date();
+  const pad = n => String(n).padStart(2,'0');
+  const jsonStr = JSON.stringify({ debtors, config, exportedAt: d.toISOString() }, null, 2);
+
+  // 1. Baixa localmente
+  const bl = new Blob([jsonStr], { type: 'application/json' });
+  const a  = document.createElement('a');
+  a.href   = URL.createObjectURL(bl);
+  a.download = `finance_backup_${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}.json`;
+  a.click();
+
+  // 2. Salva no Google Drive
+  showToast('☁️ Salvando no Google Drive…', 'blue');
+  try {
+    await salvarNoDrive(jsonStr);
+    showToast('✅ Backup salvo localmente e no Google Drive!', 'green');
+  } catch(e) {
+    showToast('⚠️ Baixado localmente. Drive: ' + e.message, 'yellow');
+    console.warn('Drive error:', e);
+  }
+}
+
+function exportarDados(){ salvarFinanceCompleto(); }
+
 function importarDados(){ document.getElementById('importFile').click(); }
 function onImportFile(e){
   const f=e.target.files[0]; if(!f)return;
