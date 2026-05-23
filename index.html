@@ -865,10 +865,22 @@ async function loadFromCloud() {
     const doc = await getUserDocRef(_currentUser.uid).get();
     if (doc.exists) {
       const data = doc.data();
-      debtors = data.debtors || [];
-      config  = data.config  || { taxaJurosDefault: 20 };
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({ debtors, config }));
-      setSyncStatus('saved');
+
+      // Se tinha mudanças offline pendentes, manda para nuvem em vez de sobrescrever
+      const pendente = localStorage.getItem(STORAGE_KEY + '_pendente');
+      if (pendente) {
+        const p = JSON.parse(pendente);
+        debtors = p.debtors || [];
+        config  = p.config  || { taxaJurosDefault: 20 };
+        await saveToCloud();
+        localStorage.removeItem(STORAGE_KEY + '_pendente');
+        showToast('🔄 Dados offline sincronizados com a nuvem!', 'green');
+      } else {
+        debtors = data.debtors || [];
+        config  = data.config  || { taxaJurosDefault: 20 };
+        localStorage.setItem(STORAGE_KEY, JSON.stringify({ debtors, config }));
+        setSyncStatus('saved');
+      }
     } else {
       if (debtors.length > 0) await saveToCloud();
       else setSyncStatus('saved');
@@ -876,7 +888,8 @@ async function loadFromCloud() {
     renderStats(); renderTable(); buildAZIndex();
   } catch(e) {
     setSyncStatus('error');
-    console.warn('Usando dados locais:', e.message);
+    console.warn('Usando dados locais (offline):', e.message);
+    renderStats(); renderTable(); buildAZIndex();
   }
 }
 
@@ -899,8 +912,43 @@ function startRealtimeSync() {
   }, () => setSyncStatus('error'));
 }
 
+// Monitora conexão e sincroniza quando voltar a internet
+window.addEventListener('online', async () => {
+  setSyncStatus('loading');
+  showToast('📶 Conexão restaurada! Sincronizando…', 'blue');
+  if (_currentUser) {
+    const pendente = localStorage.getItem(STORAGE_KEY + '_pendente');
+    if (pendente) {
+      try {
+        const p = JSON.parse(pendente);
+        debtors = p.debtors || [];
+        config  = p.config  || config;
+        await saveToCloud();
+        localStorage.removeItem(STORAGE_KEY + '_pendente');
+        showToast('✅ Dados offline sincronizados!', 'green');
+        renderStats(); renderTable(); buildAZIndex();
+      } catch(e) {
+        showToast('⚠️ Erro ao sincronizar: ' + e.message, 'yellow');
+      }
+    } else {
+      setSyncStatus('saved');
+    }
+  }
+});
+
+window.addEventListener('offline', () => {
+  setSyncStatus('error');
+  showToast('📵 Sem internet — mudanças salvas localmente.', 'yellow');
+});
+
 function save() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify({ debtors, config }));
+  if (!navigator.onLine) {
+    // Sem internet: marca como pendente para sincronizar depois
+    localStorage.setItem(STORAGE_KEY + '_pendente', JSON.stringify({ debtors, config }));
+    setSyncStatus('error');
+    return;
+  }
   _isSyncing = true;
   saveToCloud().finally(() => { _isSyncing = false; });
 }
