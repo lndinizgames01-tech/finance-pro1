@@ -995,7 +995,10 @@ function fmtDate(d){ if(!d)return '—'; const[y,m,dia]=d.split('-'); return `${
 function fmtBRL(v){ return 'R$ '+Number(v).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}); }
 function addMonths(ds,n){ const d=new Date(ds+'T12:00:00'); d.setMonth(d.getMonth()+n); return d.toISOString().split('T')[0]; }
 function instKey(n){ return `inst_${n}`; }
-function getInstValor(d,inst){ return (inst&&inst.valor!==undefined&&inst.valor!==null&&inst.valor>0)?inst.valor:(d.valor/(d.parcelas||1)); }
+function getInstValor(d,inst){
+  if(inst&&inst.extra) return (inst.valor||0);
+  return (inst&&inst.valor!==undefined&&inst.valor!==null&&inst.valor>0)?inst.valor:(d.valor/(d.parcelasOriginais||d.parcelas||1));
+}
 
 // ══════════════════════════════════════════
 //  LÓGICA DE NEGÓCIO
@@ -1013,8 +1016,11 @@ function setInstStatus(idx,n,st){
 function getStatus(d){
   if(d.tipo==='unico'){ if(d.statusManual)return d.statusManual; if(d.pago)return'pago'; return d.dataInicio<today()?'atrasado':'pendente'; }
   let allP=true,hasSJ=false,hasAtr=false;
-  for(let i=1;i<=d.parcelas;i++){
-    const st=getInstStatus(d,i)||(d.installments?.find(x=>x.num===i)?.date<today()?'atrasado':'pendente');
+  const originais=d.installments?d.installments.filter(i=>!i.extra):[];
+  const total=originais.length||d.parcelas;
+  for(let i=0;i<total;i++){
+    const inst=originais[i]||{num:i+1,date:''};
+    const st=getInstStatus(d,inst.num)||(inst.date<today()?'atrasado':'pendente');
     if(st!=='pago')allP=false; if(st==='sojuros')hasSJ=true; if(st==='atrasado')hasAtr=true;
   }
   if(allP)return'pago'; if(hasSJ)return'sojuros'; if(hasAtr)return'atrasado'; return'pendente';
@@ -1023,8 +1029,8 @@ function calcSaldo(d){
   if(d.tipo==='unico')return getStatus(d)==='pago'?0:d.valor;
   if(d.installments){
     return d.installments.reduce((s,inst)=>{
+      if(inst.extra) return s; // meses extras nao entram no saldo do acordo
       const st=getInstStatus(d,inst.num)||(inst.date<today()?'atrasado':'pendente');
-      // APENAS "PAGO" abate o valor. "Só Juros", "Pendente" e "Atrasado" NÃO abatem.
       return s+(st==='pago'?0:getInstValor(d,inst));
     },0);
   }
@@ -1246,12 +1252,17 @@ function openDetail(id){
   </div>`;
   if(d.obs)html+=`<div style="background:var(--surface);padding:9px 13px;border-radius:var(--r-sm);font-size:12px;color:var(--muted2);margin-bottom:10px;border:1px solid var(--border)">📝 ${d.obs}</div>`;
   if(d.tipo==='parcelado'&&d.installments){
+    const nOrig=d.parcelasOriginais||d.parcelas;
     html+=`<div class="inst-list">`;
     d.installments.forEach(inst=>{
+      const isExtra=!!inst.extra;
       const iv=getInstValor(d,inst);
       const st=getInstStatus(d,inst.num)||(inst.date<today()?'atrasado':'pendente');
-      const cls=st==='pago'?'paid':st==='sojuros'?'so-juros':st==='atrasado'?'due':'future';
+      const cls=isExtra?'so-juros':(st==='pago'?'paid':st==='sojuros'?'so-juros':st==='atrasado'?'due':'future');
       const stlabel=st==='pago'?`<span style="color:var(--green);font-weight:700;font-size:12px">✅ PAGO</span>`:st==='sojuros'?`<span style="color:var(--orange);font-weight:700;font-size:12px">🟠 SÓ JUROS</span>`:st==='atrasado'?`<span style="color:var(--red);font-weight:700;font-size:12px">🔴 NÃO PAGOU</span>`:`<span style="color:var(--yellow);font-weight:700;font-size:12px">🟡 PENDENTE</span>`;
+      const tituloLabel=isExtra
+        ? `<span style="font-weight:700;font-size:13px">📅 Mês Extra — ${fmtDate(inst.date)}</span><span style="font-size:10px;background:rgba(251,146,60,.2);color:var(--orange);border:1px solid var(--orange-bdr);border-radius:4px;padding:1px 6px;margin-left:6px">FORA DO ACORDO</span>`
+        : `<span style="font-weight:700;font-size:13px">Parcela ${inst.num}/${nOrig} — ${fmtDate(inst.date)}</span>`;
       const valorDisplay = iv===0
         ? `<span style="display:inline-flex;align-items:center;gap:4px">
              <input type="number" id="vp_${inst.num}" value="0" min="0" step="0.01" placeholder="R$ 0,00"
@@ -1267,14 +1278,20 @@ function openDetail(id){
                onkeydown="if(event.key==='Enter')salvarValorParcela('${d.id}',${inst.num},this)">
              <button onclick="salvarValorParcela('${d.id}',${inst.num},document.getElementById('vpei_${inst.num}'))" style="font-size:10px;padding:3px 7px;border-radius:5px;background:rgba(52,211,153,.15);color:var(--green);border:1px solid var(--green-bdr);cursor:pointer;font-family:'Lato',sans-serif;font-weight:700">✔ OK</button>
            </span>`;
-      html+=`<div class="inst-item ${cls}"><div style="flex:1"><div style="font-weight:700;font-size:13px;margin-bottom:3px">Parcela ${inst.num}/${d.parcelas} — ${fmtDate(inst.date)}</div><div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">${valorDisplay}${stlabel}</div>
-        <div class="inst-status-btns">
-          <button class="inst-status-btn isb-pago ${st==='pago'?'active-btn':''}" onclick="marcarParcela('${d.id}',${inst.num},'pago')">✅ PAGO/PG</button>
-          <button class="inst-status-btn isb-pendente ${st==='pendente'?'active-btn':''}" onclick="marcarParcela('${d.id}',${inst.num},'pendente')">🟡 PENDENTE</button>
-          <button class="inst-status-btn isb-sojuros ${st==='sojuros'?'active-btn':''}" onclick="marcarParcela('${d.id}',${inst.num},'sojuros')">🟠 SÓ JUROS</button>
-          <button class="inst-status-btn isb-naopagou ${st==='atrasado'?'active-btn':''}" onclick="marcarParcela('${d.id}',${inst.num},'atrasado')">🔴 NÃO PAGOU</button>
-          ${st==='sojuros'?`<button class="inst-status-btn" style="background:rgba(96,165,250,.15);color:var(--accent);border:1px solid rgba(96,165,250,.4);margin-left:4px" onclick="prorrogarMes('${d.id}',${inst.num})" title="Adiciona nova parcela no mês seguinte ao final">📅 +1 MÊS</button>`:''}
-        </div></div></div>`;
+      html+=`<div class="inst-item ${cls}" style="${isExtra?'border-style:dashed;opacity:.95':''}">
+        <div style="flex:1">
+          <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;flex-wrap:wrap">${tituloLabel}</div>
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px">${valorDisplay}${isExtra?'':`${stlabel}`}</div>
+          <div class="inst-status-btns">
+            <button class="inst-status-btn isb-pago ${st==='pago'?'active-btn':''}" onclick="marcarParcela('${d.id}',${inst.num},'pago')">✅ PAGO/PG</button>
+            ${isExtra?'':`<button class="inst-status-btn isb-pendente ${st==='pendente'?'active-btn':''}" onclick="marcarParcela('${d.id}',${inst.num},'pendente')">🟡 PENDENTE</button>
+            <button class="inst-status-btn isb-sojuros ${st==='sojuros'?'active-btn':''}" onclick="marcarParcela('${d.id}',${inst.num},'sojuros')">🟠 SÓ JUROS</button>
+            <button class="inst-status-btn isb-naopagou ${st==='atrasado'?'active-btn':''}" onclick="marcarParcela('${d.id}',${inst.num},'atrasado')">🔴 NÃO PAGOU</button>
+            ${st==='sojuros'?`<button class="inst-status-btn" style="background:rgba(96,165,250,.15);color:var(--accent);border:1px solid rgba(96,165,250,.4);margin-left:4px" onclick="prorrogarMes('${d.id}',${inst.num})">📅 +1 MÊS</button>`:''}`}
+            ${isExtra?`<button class="inst-status-btn" style="background:var(--red-bg);color:var(--red);border:1px solid var(--red-bdr)" onclick="excluirParcelaExtra('${d.id}',${inst.num})" title="Remover este mês extra">🗑 Remover</button>`:''}
+          </div>
+        </div>
+      </div>`;
     });
     html+=`</div>`;
   } else {
@@ -1304,28 +1321,42 @@ function marcarUnico(id,st){
 function prorrogarMes(id, instNum){
   const idx=debtors.findIndex(x=>x.id===id);
   const d=debtors[idx]; if(!d||d.tipo!=='parcelado')return;
-  // Valor da nova parcela = mesmo valor da parcela original que está em só juros
-  const instOriginal=d.installments.find(x=>x.num===instNum);
-  const valorNova=getInstValor(d,instOriginal);
-  // Data = última parcela existente + 1 mês
+  if(!d.parcelasOriginais) d.parcelasOriginais=d.parcelas;
   const lastInst=d.installments.slice().sort((a,b)=>b.num-a.num)[0];
   const novaData=addMonths(lastInst.date,1);
   const novoNum=d.parcelas+1;
-  d.installments.push({num:novoNum,date:novaData,valor:0,pago:false,soJuros:false,paidAt:null});
+  d.installments.push({num:novoNum,date:novaData,valor:0,pago:false,soJuros:false,paidAt:null,extra:true});
   d.parcelas=novoNum;
   save();renderTable();openDetail(id);
-  showToast(`📅 Parcela ${novoNum} adicionada para ${fmtDate(novaData)}!`,'orange');
+  showToast(`📅 Mês extra adicionado para ${fmtDate(novaData)}!`,'orange');
 }
 function prorrogarMesLista(id, instNum){
   const idx=debtors.findIndex(x=>x.id===id);
   const d=debtors[idx]; if(!d||d.tipo!=='parcelado')return;
+  if(!d.parcelasOriginais) d.parcelasOriginais=d.parcelas;
   const lastInst=d.installments.slice().sort((a,b)=>b.num-a.num)[0];
   const novaData=addMonths(lastInst.date,1);
   const novoNum=d.parcelas+1;
-  d.installments.push({num:novoNum,date:novaData,valor:0,pago:false,soJuros:false,paidAt:null});
+  d.installments.push({num:novoNum,date:novaData,valor:0,pago:false,soJuros:false,paidAt:null,extra:true});
   d.parcelas=novoNum;
   save();renderTable();renderListaModal();
-  showToast(`📅 Parcela ${novoNum} adicionada para ${fmtDate(novaData)}!`,'orange');
+  showToast(`📅 Mês extra adicionado para ${fmtDate(novaData)}!`,'orange');
+}
+function excluirParcelaExtra(id, instNum){
+  const idx=debtors.findIndex(x=>x.id===id);
+  const d=debtors[idx]; if(!d)return;
+  d.installments=d.installments.filter(i=>i.num!==instNum);
+  d.parcelas=d.installments.length>0?Math.max(...d.installments.map(i=>i.num)):(d.parcelasOriginais||0);
+  save();renderTable();openDetail(id);
+  showToast('🗑 Mês extra removido.','red');
+}
+function excluirParcelaExtraLista(id, instNum){
+  const idx=debtors.findIndex(x=>x.id===id);
+  const d=debtors[idx]; if(!d)return;
+  d.installments=d.installments.filter(i=>i.num!==instNum);
+  d.parcelas=d.installments.length>0?Math.max(...d.installments.map(i=>i.num)):(d.parcelasOriginais||0);
+  save();renderTable();renderListaModal();
+  showToast('🗑 Mês extra removido.','red');
 }
 function salvarValorParcela(id, instNum, inputEl){
   const idx=debtors.findIndex(x=>x.id===id);
@@ -2176,9 +2207,13 @@ function renderListaParcelas(tipo, clienteId){
 
     lista.forEach(p => {
       const st = p.status;
+      const isExtra = !!p.extra;
+      const nOrig = d.parcelasOriginais || d.parcelas;
       const stLabel = st==='pago'?'✅ PAGO':st==='sojuros'?'🟠 SÓ JUROS':st==='atrasado'?'🔴 NÃO PAGOU':'🟡 PENDENTE';
-      const cls = st==='pago'?'paid':st==='sojuros'?'so-juros':st==='atrasado'?'due':'future';
-      const parcelaLabel = d.tipo==='parcelado'?`Parcela ${p.num}/${d.parcelas}`:'Pagamento Único';
+      const cls = isExtra?'so-juros':(st==='pago'?'paid':st==='sojuros'?'so-juros':st==='atrasado'?'due':'future');
+      const parcelaLabel = isExtra
+        ? `📅 Mês Extra — ${fmtDate(p.date)} <span style="font-size:10px;background:rgba(251,146,60,.2);color:var(--orange);border:1px solid var(--orange-bdr);border-radius:4px;padding:1px 6px;margin-left:4px">FORA DO ACORDO</span>`
+        : d.tipo==='parcelado'?`Parcela ${p.num}/${nOrig}`:'Pagamento Único';
 
       const pValorDisplay = p.valorReal===0
         ? `<span style="display:inline-flex;align-items:center;gap:4px">
@@ -2196,21 +2231,25 @@ function renderListaParcelas(tipo, clienteId){
              <button onclick="salvarValorParcelaLista('${d.id}',${p.num},document.getElementById('lvpei_${p.num}'))" style="font-size:10px;padding:3px 7px;border-radius:5px;background:rgba(52,211,153,.15);color:var(--green);border:1px solid var(--green-bdr);cursor:pointer;font-family:'Lato',sans-serif;font-weight:700">✔ OK</button>
            </span>`;
 
-      html += `<div class="inst-item ${cls}">
+      html += `<div class="inst-item ${cls}" style="${isExtra?'border-style:dashed':''}">
         <div style="flex:1">
           <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:4px;flex-wrap:wrap">
-            <span style="font-weight:700;font-size:13px">${parcelaLabel} — ${fmtDate(p.date)}</span>
+            <span style="font-weight:700;font-size:13px">${isExtra?parcelaLabel:`${parcelaLabel} — ${fmtDate(p.date)}`}</span>
             <span style="display:inline-flex;align-items:center;gap:6px">${pValorDisplay}</span>
           </div>
-          <div style="font-size:11px;font-weight:700;margin-bottom:6px;color:${st==='pago'?'var(--green)':st==='sojuros'?'var(--orange)':st==='atrasado'?'var(--red)':'var(--yellow)'}">${stLabel}</div>
+          ${isExtra?'':`<div style="font-size:11px;font-weight:700;margin-bottom:6px;color:${st==='pago'?'var(--green)':st==='sojuros'?'var(--orange)':st==='atrasado'?'var(--red)':'var(--yellow)'}">${stLabel}</div>`}
           <div class="inst-status-btns">`;
 
       if(d.tipo==='parcelado'){
-        html += `<button class="inst-status-btn isb-pago ${st==='pago'?'active-btn':''}" onclick="marcarParcelaLista('${d.id}',${p.num},'pago')">✅ PAGO/PG</button>
-                 <button class="inst-status-btn isb-pendente ${st==='pendente'?'active-btn':''}" onclick="marcarParcelaLista('${d.id}',${p.num},'pendente')">🟡 PENDENTE</button>
-                 <button class="inst-status-btn isb-sojuros ${st==='sojuros'?'active-btn':''}" onclick="marcarParcelaLista('${d.id}',${p.num},'sojuros')">🟠 SÓ JUROS</button>
-                 <button class="inst-status-btn isb-naopagou ${st==='atrasado'?'active-btn':''}" onclick="marcarParcelaLista('${d.id}',${p.num},'atrasado')">🔴 NÃO PAGOU</button>
-                 ${st==='sojuros'?`<button class="inst-status-btn" style="background:rgba(96,165,250,.15);color:var(--accent);border:1px solid rgba(96,165,250,.4);margin-left:4px" onclick="prorrogarMesLista('${d.id}',${p.num})" title="Adiciona nova parcela no mês seguinte ao final">📅 +1 MÊS</button>`:''}`;
+        html += `<button class="inst-status-btn isb-pago ${st==='pago'?'active-btn':''}" onclick="marcarParcelaLista('${d.id}',${p.num},'pago')">✅ PAGO/PG</button>`;
+        if(!isExtra){
+          html += `<button class="inst-status-btn isb-pendente ${st==='pendente'?'active-btn':''}" onclick="marcarParcelaLista('${d.id}',${p.num},'pendente')">🟡 PENDENTE</button>
+                   <button class="inst-status-btn isb-sojuros ${st==='sojuros'?'active-btn':''}" onclick="marcarParcelaLista('${d.id}',${p.num},'sojuros')">🟠 SÓ JUROS</button>
+                   <button class="inst-status-btn isb-naopagou ${st==='atrasado'?'active-btn':''}" onclick="marcarParcelaLista('${d.id}',${p.num},'atrasado')">🔴 NÃO PAGOU</button>
+                   ${st==='sojuros'?`<button class="inst-status-btn" style="background:rgba(96,165,250,.15);color:var(--accent);border:1px solid rgba(96,165,250,.4);margin-left:4px" onclick="prorrogarMesLista('${d.id}',${p.num})">📅 +1 MÊS</button>`:''}`;
+        } else {
+          html += `<button class="inst-status-btn" style="background:var(--red-bg);color:var(--red);border:1px solid var(--red-bdr);margin-left:4px" onclick="excluirParcelaExtraLista('${d.id}',${p.num})" title="Remover este mês extra">🗑 Remover</button>`;
+        }
       } else {
         html += `<button class="inst-status-btn isb-pago ${st==='pago'?'active-btn':''}" onclick="marcarUnicoLista('${d.id}','pago')">✅ PAGO/PG</button>
                  <button class="inst-status-btn isb-pendente ${st==='pendente'?'active-btn':''}" onclick="marcarUnicoLista('${d.id}','pendente')">🟡 PENDENTE</button>
