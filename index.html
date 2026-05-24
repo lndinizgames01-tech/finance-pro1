@@ -14,7 +14,6 @@
 <meta name="apple-mobile-web-app-title" content="Finance Pro">
 <link rel="apple-touch-icon" href="icon-192.png">
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <!-- Firebase SDK -->
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
@@ -170,9 +169,6 @@ body::after{content:'';position:fixed;inset:0;background:url('https://images.uns
 .btn-orange:hover{background:rgba(249,115,22,.2)}
 .btn-sm{font-size:11px;padding:5px 9px}
 .btn-xs{font-size:10px;padding:3px 7px;border-radius:5px}
-.btn-excel{background:linear-gradient(135deg,#217346,#1d6b41);color:#fff;box-shadow:0 3px 10px rgba(33,115,70,.35)}
-.btn-excel:hover{transform:translateY(-1px);box-shadow:0 5px 14px rgba(33,115,70,.45)}
-
 .main{max-width:1400px;margin:0 auto;padding:2rem}
 .stats{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin-bottom:2rem}
 .stat-card{background:var(--stat-bg);border:1px solid var(--stat-border);border-radius:var(--r);padding:1.1rem 1.3rem;position:relative;overflow:hidden;transition:all .35s cubic-bezier(.4,0,.2,1);backdrop-filter:blur(12px);cursor:pointer}
@@ -559,11 +555,8 @@ tbody tr:hover .name-initial{transform:scale(1.15);box-shadow:0 4px 20px rgba(96
     <span id="syncStatus" style="font-size:10px;font-weight:600;color:var(--muted);letter-spacing:.03em;margin-left:4px"></span>
   </div>
   <div class="header-right">
-    <button class="btn btn-ghost btn-sm" onclick="openJurosConfig()">⚙️ Juros</button>
     <button class="btn btn-ghost btn-sm" onclick="openCalModal()">📅 Calendário</button>
-    <button class="btn btn-excel btn-sm" onclick="openExcelModal()">📊 Excel</button>
     <button class="btn btn-ghost btn-sm" onclick="toggleTheme()" id="themeBtn" title="Alternar tema">🌙</button>
-    <button class="btn btn-ghost btn-sm" id="installBtn" onclick="installPWA()" style="display:none" title="Instalar como app no dispositivo">📲 Instalar App</button>
     <button class="btn btn-ghost btn-sm" onclick="openReportModal()">💾 Salvar Relatório</button>
     <button class="btn btn-warn btn-sm" onclick="salvarFinanceCompleto()">🛡️ Backup</button>
     <button class="btn btn-primary btn-sm" onclick="openAddModal()">+ Novo Cliente</button>
@@ -677,18 +670,7 @@ tbody tr:hover .name-initial{transform:scale(1.15);box-shadow:0 4px 20px rgba(96
           </div>
         </div>
       </div>
-      <div class="form-group full" id="jurosField" style="display:none">
-        <label>Aplicar Juros?</label>
-        <div style="display:flex;gap:8px;margin-top:4px">
-          <div class="tipo-opt" id="opt_juros_sim" onclick="selectJuros(true)" style="flex:1;flex-direction:row;gap:8px;justify-content:flex-start;padding:9px 12px"><span>💰</span><span class="tipo-label">Sim, com juros</span></div>
-          <div class="tipo-opt selected" id="opt_juros_nao" onclick="selectJuros(false)" style="flex:1;flex-direction:row;gap:8px;justify-content:flex-start;padding:9px 12px"><span>🚫</span><span class="tipo-label">Sem juros</span></div>
-        </div>
-        <div id="jurosRateField" style="display:none;margin-top:8px">
-          <label style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase">Taxa de Juros (%)</label>
-          <input type="number" id="f_taxaJuros" placeholder="Ex: 20" step="0.1" min="0" style="margin-top:4px">
-          <div class="form-hint" id="jurosValorInfo"></div>
-        </div>
-      </div>
+
       <div class="form-divider"></div>
       <div class="form-section-title">💳 Forma de Pagamento</div>
       <div class="form-group full">
@@ -733,77 +715,9 @@ tbody tr:hover .name-initial{transform:scale(1.15);box-shadow:0 4px 20px rgba(96
   </div>
 </div>
 
-<!-- MODAL: EXCEL EXPORT (com opções) -->
-<div class="overlay" id="excelModal">
-  <div class="modal modal-xl">
-    <div class="modal-header">
-      <div><div class="modal-title">📊 Exportar para Excel</div><div class="modal-subtitle">Escolha cliente e período antes de exportar</div></div>
-      <button class="close-btn" onclick="closeModal('excelModal')">✕</button>
-    </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
-      <div class="export-section">
-        <div class="export-section-title">👤 Qual cliente?</div>
-        <div class="radio-group">
-          <label class="radio-opt selected" id="ropt_todos" onclick="setExportCliente('todos')">
-            <input type="radio" name="expCliente" value="todos" checked> <label>Todos os clientes</label>
-          </label>
-          <label class="radio-opt" id="ropt_um" onclick="setExportCliente('um')">
-            <input type="radio" name="expCliente" value="um"> <label>Um cliente específico</label>
-          </label>
-        </div>
-        <div id="exportClienteSelect" style="display:none;margin-top:8px">
-          <select id="exportClienteId" style="width:100%"><option value="">Selecione...</option></select>
-        </div>
-      </div>
-      <div class="export-section">
-        <div class="export-section-title">📅 Qual período?</div>
-        <div class="radio-group">
-          <label class="radio-opt selected" id="ropt_todos_meses" onclick="setExportPeriodo('todos')">
-            <input type="radio" name="expPeriodo" value="todos" checked> <label>Todos os meses</label>
-          </label>
-          <label class="radio-opt" id="ropt_mes_esp" onclick="setExportPeriodo('mes')">
-            <input type="radio" name="expPeriodo" value="mes"> <label>Mês específico</label>
-          </label>
-        </div>
-        <div id="exportPeriodoFields" style="display:none;margin-top:8px;display:grid;grid-template-columns:1fr 1fr;gap:6px">
-          <div><label style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase">Mês</label>
-          <select id="exportMes" style="margin-top:3px">
-            <option value="01">Janeiro</option><option value="02">Fevereiro</option><option value="03">Março</option><option value="04">Abril</option><option value="05">Maio</option><option value="06">Junho</option><option value="07">Julho</option><option value="08">Agosto</option><option value="09">Setembro</option><option value="10">Outubro</option><option value="11">Novembro</option><option value="12">Dezembro</option>
-          </select></div>
-          <div><label style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase">Ano</label>
-          <input type="number" id="exportAno" style="margin-top:3px" value="2026" min="2020" max="2099"></div>
-        </div>
-      </div>
-    </div>
-    <div id="excelPreviewArea">
-      <div class="excel-preview-wrap" id="excelPreviewWrap"></div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-ghost" onclick="closeModal('excelModal')">Fechar</button>
-      <button class="btn btn-ghost" onclick="renderExcelPreview()">🔄 Atualizar Preview</button>
-      <button class="btn btn-excel" onclick="exportExcel()">⬇ Baixar .xlsx</button>
-    </div>
-  </div>
-</div>
 
-<!-- MODAL: CONFIG JUROS -->
-<div class="overlay" id="jurosModal">
-  <div class="modal" style="max-width:400px">
-    <div class="modal-header">
-      <div><div class="modal-title">⚙️ Juros Padrão</div><div class="modal-subtitle">Taxa sugerida para novos clientes</div></div>
-      <button class="close-btn" onclick="closeModal('jurosModal')">✕</button>
-    </div>
-    <div class="form-group" style="margin-bottom:1rem">
-      <label>Taxa de Juros Padrão (%)</label>
-      <input type="number" id="cfgJuros" step="0.1" min="0" placeholder="Ex: 20">
-      <div class="form-hint">💡 A opção "Só Juros" estará disponível para todas as parcelas, independente de ativar os juros aqui. Ativar os juros apenas calcula o valor automaticamente.</div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-ghost" onclick="closeModal('jurosModal')">Cancelar</button>
-      <button class="btn btn-primary" onclick="saveJurosConfig()">💾 Salvar</button>
-    </div>
-  </div>
-</div>
+
+
 
 
 
@@ -841,9 +755,8 @@ try {
   if (old && debtors.length===0) { debtors=JSON.parse(old); debtors.forEach(d=>{if(!d.installmentLog)d.installmentLog={};}); }
 } catch(e) {}
 
-let editingId=null, tipoSelecionado='unico', formaSelecionada='dinheiro', jurosAplicado=false, modoParcelamento='igual';
+let editingId=null, tipoSelecionado='unico', formaSelecionada='dinheiro', modoParcelamento='igual';
 let azFiltro='', clientCalId=null, clientCalYear=new Date().getFullYear(), calYear=new Date().getFullYear();
-let exportClienteMode='todos', exportPeriodoMode='todos';
 let _isSyncing = false;
 
 // ══════════════════════════════════════════
@@ -1176,8 +1089,7 @@ function renderTable(){
     else pc='<span class="muted-sm">Único</span>';
     const sb=st==='pago'?`<span class="badge badge-green">🟢 Pago</span>`:st==='atrasado'?`<span class="badge badge-red">🔴 Não Pagou</span>`:st==='sojuros'?`<span class="badge badge-orange">🟠 Só Juros</span>`:`<span class="badge badge-yellow">🟡 Pendente</span>`;
     const tb2=d.tipo==='parcelado'?(d.modoParcelamento==='personalizado'?`<span class="badge badge-blue">📆 ${d.parcelas}x ✍️ Personalizado</span>`:`<span class="badge badge-blue">📆 ${d.parcelas}x de ${fmtBRL(d.valor/d.parcelas)}</span>`):`<span class="badge badge-gray">💵 Único</span>`;
-    const jb=d.temJuros?`<span class="juros-badge">📈 ${d.taxaJuros}%</span>`:'';
-    return `<tr class="${rc}" style="animation-delay:${idx*.03}s"><td data-label="Cliente"><div class="name-row"><div class="name-initial">${fc}</div><div><div class="name-cell">${d.nome}</div>${d.obs?`<div class="muted-sm">📝 ${d.obs}</div>`:''}</div></div></td><td data-label="Próx. Venc.">${dc}</td><td data-label="Valor Emp." class="mono">${fmtBRL(d.valor)}</td><td data-label="Parcelas"><div style="display:flex;flex-direction:column;gap:3px">${tb2}${jb}</div></td><td data-label="Progresso">${pc}</td><td data-label="Saldo" class="mono" style="color:${saldo===0?'var(--green)':'var(--red)'}">${fmtBRL(saldo)}</td><td data-label="Status">${sb}</td><td data-label="Ações"><div style="display:flex;gap:3px;flex-wrap:wrap"><button class="btn btn-sm btn-success" onclick="openDetail('${d.id}')">👁 Ver</button><button class="btn btn-sm" style="background:rgba(99,102,241,.12);color:#818cf8;border:1px solid rgba(99,102,241,.3)" onclick="openClientCalendar('${d.id}')">📅</button><button class="btn btn-sm btn-ghost" onclick="editDebtor('${d.id}')">✏</button><button class="btn btn-sm btn-danger" onclick="deleteDebtor('${d.id}')">🗑</button></div></td></tr>`;
+    return `<tr class="${rc}" style="animation-delay:${idx*.03}s"><td data-label="Cliente"><div class="name-row"><div class="name-initial">${fc}</div><div><div class="name-cell">${d.nome}</div>${d.obs?`<div class="muted-sm">📝 ${d.obs}</div>`:''}</div></div></td><td data-label="Próx. Venc.">${dc}</td><td data-label="Valor Emp." class="mono">${fmtBRL(d.valor)}</td><td data-label="Parcelas"><div style="display:flex;flex-direction:column;gap:3px">${tb2}</div></td><td data-label="Progresso">${pc}</td><td data-label="Saldo" class="mono" style="color:${saldo===0?'var(--green)':'var(--red)'}">${fmtBRL(saldo)}</td><td data-label="Status">${sb}</td><td data-label="Ações"><div style="display:flex;gap:3px;flex-wrap:wrap"><button class="btn btn-sm btn-success" onclick="openDetail('${d.id}')">👁 Ver</button><button class="btn btn-sm" style="background:rgba(99,102,241,.12);color:#818cf8;border:1px solid rgba(99,102,241,.3)" onclick="openClientCalendar('${d.id}')">📅</button><button class="btn btn-sm btn-ghost" onclick="editDebtor('${d.id}')">✏</button><button class="btn btn-sm btn-danger" onclick="deleteDebtor('${d.id}')">🗑</button></div></td></tr>`;
   }).join('');
   renderStats();buildDateDropdowns();buildAZIndex();
 }
@@ -1194,10 +1106,9 @@ function openAddModal(prefill){
   document.getElementById('f_dataInicio').value=prefill?.dataInicio||today();
   document.getElementById('f_parcelas').value=prefill?.parcelas||'';
   document.getElementById('f_obs').value=prefill?.obs||'';
-  document.getElementById('f_taxaJuros').value=config.taxaJurosDefault;
   document.getElementById('valorParcelaInfo').textContent='';
   modoParcelamento='igual';
-  selectTipo(prefill?.tipo||'unico'); selectForma('dinheiro'); selectJuros(false);
+  selectTipo(prefill?.tipo||'unico'); selectForma('dinheiro');
   if(prefill?.parcelas&&prefill.parcelas>1){selectTipo('parcelado');}
   openModal('addModal');
   setTimeout(()=>document.getElementById('f_nome').focus(),100);
@@ -1211,7 +1122,6 @@ function editDebtor(id){
   document.getElementById('f_valor').value=d.valor;
   document.getElementById('f_dataInicio').value=d.dataInicio;
   document.getElementById('f_obs').value=d.obs||'';
-  document.getElementById('f_taxaJuros').value=d.taxaJuros||config.taxaJurosDefault;
   modoParcelamento=d.modoParcelamento||'igual';
   selectTipo(d.tipo);
   if(d.tipo==='parcelado'){
@@ -1226,7 +1136,7 @@ function editDebtor(id){
       },60);
     }
   }
-  selectForma(d.forma||'dinheiro'); selectJuros(d.temJuros||false);
+  selectForma(d.forma||'dinheiro');
   openModal('addModal');
 }
 function selectTipo(t){
@@ -1234,21 +1144,13 @@ function selectTipo(t){
   document.getElementById('opt_unico').classList.toggle('selected',t==='unico');
   document.getElementById('opt_parcelado').classList.toggle('selected',t==='parcelado');
   document.getElementById('parcelasField').style.display=t==='parcelado'?'block':'none';
-  document.getElementById('jurosField').style.display=t==='parcelado'?'block':'none';
   document.getElementById('modoParcelamentoField').style.display=t==='parcelado'?'block':'none';
   if(t!=='parcelado'){modoParcelamento='igual';document.getElementById('customInstFields').style.display='none';}
 }
 function selectForma(f){ formaSelecionada=f; document.querySelectorAll('#formaGrid .forma-opt').forEach(el=>el.classList.toggle('selected',el.dataset.forma===f)); }
-function selectJuros(v){
-  jurosAplicado=v;
-  document.getElementById('opt_juros_sim').classList.toggle('selected',v);
-  document.getElementById('opt_juros_nao').classList.toggle('selected',!v);
-  document.getElementById('jurosRateField').style.display=v?'block':'none';
-  calcParcela();
-}
 function calcParcela(){
-  const val=parseFloat(document.getElementById('f_valor').value)||0,n=parseInt(document.getElementById('f_parcelas').value)||0,taxa=parseFloat(document.getElementById('f_taxaJuros').value)||0;
-  const info=document.getElementById('valorParcelaInfo'),ji=document.getElementById('jurosValorInfo');
+  const val=parseFloat(document.getElementById('f_valor').value)||0,n=parseInt(document.getElementById('f_parcelas').value)||0;
+  const info=document.getElementById('valorParcelaInfo');
   if(val&&n>0){
     if(modoParcelamento==='personalizado'){
       info.textContent=`→ ${n} parcelas com valores personalizados`;
@@ -1256,8 +1158,7 @@ function calcParcela(){
     } else {
       info.textContent=`→ ${n}x de ${fmtBRL(val/n)} (Total: ${fmtBRL(val)})`;
     }
-    if(jurosAplicado&&taxa>0&&ji)ji.textContent=`SÓ JUROS = ${fmtBRL((val/n)*(taxa/100))}/mês`;
-  } else {info.textContent='';if(ji)ji.textContent='';}
+  } else {info.textContent='';}
 }
 function selectModoParcelamento(modo){
   modoParcelamento=modo;
@@ -1296,9 +1197,9 @@ function updateCustomTotal(){
   }
 }
 function saveDebtor(){
-  const nome=document.getElementById('f_nome').value.trim(),valor=parseFloat(document.getElementById('f_valor').value),dataInicio=document.getElementById('f_dataInicio').value,obs=document.getElementById('f_obs').value.trim(),taxa=parseFloat(document.getElementById('f_taxaJuros').value)||0;
+  const nome=document.getElementById('f_nome').value.trim(),valor=parseFloat(document.getElementById('f_valor').value),dataInicio=document.getElementById('f_dataInicio').value,obs=document.getElementById('f_obs').value.trim();
   if(!nome){showToast('⚠ Informe o nome!','red');return;} if(!valor||valor<=0){showToast('⚠ Valor inválido!','red');return;} if(!dataInicio){showToast('⚠ Informe a data!','red');return;}
-  const base={nome,valor,dataInicio,obs,forma:formaSelecionada,tipo:tipoSelecionado,temJuros:jurosAplicado&&tipoSelecionado==='parcelado',taxaJuros:taxa};
+  const base={nome,valor,dataInicio,obs,forma:formaSelecionada,tipo:tipoSelecionado,temJuros:false,taxaJuros:0};
   if(tipoSelecionado==='parcelado'){
     const n=parseInt(document.getElementById('f_parcelas').value); if(!n||n<2){showToast('⚠ Mínimo 2 parcelas!','red');return;}
     const valorTotal=valor;
@@ -1332,14 +1233,13 @@ function openDetail(id){
   const st=getStatus(d),saldo=calcSaldo(d),jv=calcJurosValor(d);
   const sb=st==='pago'?`<span class="badge badge-green">🟢 Pago</span>`:st==='atrasado'?`<span class="badge badge-red">🔴 Não Pagou</span>`:st==='sojuros'?`<span class="badge badge-orange">🟠 Só Juros</span>`:`<span class="badge badge-yellow">🟡 Pendente</span>`;
   document.getElementById('detailName').textContent=d.nome;
-  document.getElementById('detailSub').innerHTML=`${sb} &nbsp; ${FORMA_LABEL[d.forma||'dinheiro']}${d.temJuros?` &nbsp; <span class="juros-badge">📈 ${d.taxaJuros}% — SÓ JUROS: ${fmtBRL(jv)}</span>`:''}`;
+  document.getElementById('detailSub').innerHTML=`${sb} &nbsp; ${FORMA_LABEL[d.forma||'dinheiro']}`;
   let html=`<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:1rem">
     <div class="stat-card blue" style="padding:.8rem"><div class="stat-label">Emprestado</div><div class="stat-value blue" style="font-size:.95rem">${fmtBRL(d.valor)}</div></div>
     <div class="stat-card ${saldo===0?'green':'red'}" style="padding:.8rem"><div class="stat-label">Saldo Devedor</div><div class="stat-value ${saldo===0?'green':'red'}" style="font-size:.95rem">${fmtBRL(saldo)}</div></div>
     <div class="stat-card" style="padding:.8rem;border-color:var(--border)"><div class="stat-label">Início</div><div style="font-family:'IBM Plex Mono',monospace;font-size:.9rem">${fmtDate(d.dataInicio)}</div></div>
   </div>`;
   if(d.obs)html+=`<div style="background:var(--surface);padding:9px 13px;border-radius:var(--r-sm);font-size:12px;color:var(--muted2);margin-bottom:10px;border:1px solid var(--border)">📝 ${d.obs}</div>`;
-  if(d.temJuros&&jv>0)html+=`<div class="info-box">🟠 <strong>SÓ JUROS = ${fmtBRL(jv)}/mês</strong> — NÃO abate a parcela. Use quando o cliente não tem o valor completo.</div>`;
   if(d.tipo==='parcelado'&&d.installments){
     html+=`<div class="inst-list">`;
     d.installments.forEach(inst=>{
@@ -1389,7 +1289,6 @@ function renderClientCal(){
   document.getElementById('calModalTitle').textContent=`📅 ${d.nome}`;
   document.getElementById('calModalSub').textContent=d.tipo==='parcelado'?(d.modoParcelamento==='personalizado'?`${d.parcelas}x (personalizado)`:`${d.parcelas}x de ${fmtBRL(d.valor/d.parcelas)}`):`Único: ${fmtBRL(d.valor)}`;
   let html=`<div class="pcal-year-nav"><button class="cal-nav-btn" onclick="clientCalYear--;renderClientCal()">‹</button><span class="pcal-year-label">${clientCalYear}</span><button class="cal-nav-btn" onclick="clientCalYear++;renderClientCal()">›</button></div>`;
-  if(d.temJuros&&jv>0)html+=`<div class="info-box" style="margin-bottom:10px">🟠 SÓ JUROS = <strong>${fmtBRL(jv)}/mês</strong></div>`;
   html+=`<div class="pcal-grid">`;
   for(let m=0;m<12;m++){
     const isCur=clientCalYear===now.getFullYear()&&m===now.getMonth();
@@ -1433,223 +1332,6 @@ function renderGeneralCal(){
   document.getElementById('calContent').innerHTML=html;
 }
 
-// ══════════════════════════════════════════
-//  EXCEL EXPORT — com seleção de cliente/período
-// ══════════════════════════════════════════
-function openExcelModal(){
-  populateExportClienteSelect();
-  setExportCliente('todos'); setExportPeriodo('todos');
-  renderExcelPreview(); openModal('excelModal');
-}
-function populateExportClienteSelect(){
-  const sel=document.getElementById('exportClienteId');
-  sel.innerHTML='<option value="">Selecione...</option>';
-  [...debtors].sort((a,b)=>a.nome.localeCompare(b.nome,'pt-BR')).forEach(d=>{sel.innerHTML+=`<option value="${d.id}">${d.nome}</option>`;});
-}
-function setExportCliente(m){
-  exportClienteMode=m;
-  document.getElementById('ropt_todos').classList.toggle('selected',m==='todos');
-  document.getElementById('ropt_um').classList.toggle('selected',m==='um');
-  document.getElementById('exportClienteSelect').style.display=m==='um'?'block':'none';
-  renderExcelPreview();
-}
-function setExportPeriodo(m){
-  exportPeriodoMode=m;
-  document.getElementById('ropt_todos_meses').classList.toggle('selected',m==='todos');
-  document.getElementById('ropt_mes_esp').classList.toggle('selected',m==='mes');
-  const pf=document.getElementById('exportPeriodoFields');
-  pf.style.display=m==='mes'?'grid':'none';
-  renderExcelPreview();
-}
-function getExportData(){
-  let list=[...debtors].sort((a,b)=>a.nome.localeCompare(b.nome,'pt-BR'));
-  if(exportClienteMode==='um'){const cId=document.getElementById('exportClienteId').value;if(cId)list=list.filter(d=>d.id===cId);}
-  const fMes=exportPeriodoMode==='mes'?document.getElementById('exportMes').value:null;
-  const fAno=exportPeriodoMode==='mes'?document.getElementById('exportAno').value:null;
-  return{list,fMes,fAno};
-}
-function getStLabel(st){return{pago:'PAGO/PG',atrasado:'NÃO PAGO',pendente:'PENDENTE',sojuros:'SÓ JUROS'}[st]||st;}
-function getStClass(st){return{pago:'xl-pago',atrasado:'xl-atrasado',pendente:'xl-pendente',sojuros:'xl-sojuros'}[st]||'';}
-
-function renderExcelPreview(){
-  const {list,fMes,fAno}=getExportData();
-  let html='';
-  list.forEach(d=>{
-    const jv=calcJurosValor(d);
-    const saldo=calcSaldo(d);
-    let rows=[];
-    if(d.tipo==='parcelado'&&d.installments){
-      rows=d.installments.filter(inst=>{if(!fMes)return true;const[y,mo]=inst.date.split('-');return mo===fMes&&y===fAno;});
-    } else {
-      if(!fMes||d.dataInicio.startsWith(fAno+'-'+fMes))rows=[{date:d.dataInicio,num:1,valor:d.valor,total:1}];
-    }
-    if(!rows.length)return;
-    const modoTag=d.modoParcelamento==='personalizado'?'<span style="background:#fce4d6;color:#8B3A0F;padding:2px 7px;border-radius:4px;font-size:10px;font-weight:700;margin-left:6px">✍️ PERSONALIZADO</span>':'';
-    html+=`<div style="background:#1a1e30;border:1px solid #2a3050;border-radius:8px;margin-bottom:16px;overflow:hidden">
-      <div style="background:#1e3a5f;color:#f0f8ff;font-weight:700;font-size:13px;padding:10px 14px;display:flex;align-items:center;gap:6px">👤 ${d.nome}${modoTag}</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:0;border-bottom:1px solid #2a3050">
-        <div style="padding:8px 12px;border-right:1px solid #2a3050"><div style="font-size:10px;color:#6b7280;text-transform:uppercase;margin-bottom:2px">Emprestado</div><div style="font-weight:700;color:#60a5fa">R$ ${d.valor.toFixed(2)}</div></div>
-        <div style="padding:8px 12px;border-right:1px solid #2a3050"><div style="font-size:10px;color:#6b7280;text-transform:uppercase;margin-bottom:2px">Data Início</div><div style="font-weight:600;color:#e2e8f0">${fmtDate(d.dataInicio)}</div></div>
-        <div style="padding:8px 12px;border-right:1px solid #2a3050"><div style="font-size:10px;color:#6b7280;text-transform:uppercase;margin-bottom:2px">Saldo Devedor</div><div style="font-weight:700;color:${saldo===0?'#10b981':'#f43f5e'}">R$ ${saldo.toFixed(2)}</div></div>
-        <div style="padding:8px 12px"><div style="font-size:10px;color:#6b7280;text-transform:uppercase;margin-bottom:2px">Juros</div><div style="font-weight:600;color:#f97316">${d.temJuros?`${d.taxaJuros}% — R$ ${jv.toFixed(2)}/mês`:'Sem juros'}</div></div>
-      </div>
-      <table class="excel-preview-table" style="width:100%"><thead>
-        <tr><th>Parcela</th><th>Data Venc.</th><th>Valor Combinado</th><th>Status (editável no Excel)</th></tr>
-      </thead><tbody>`;
-    if(d.tipo==='parcelado'){
-      rows.forEach(inst=>{
-        const iv=getInstValor(d,inst);
-        const st=getInstStatus(d,inst.num)||(inst.date<today()?'atrasado':'pendente');
-        html+=`<tr><td style="font-weight:700">${inst.num}/${d.parcelas}</td><td>${fmtDate(inst.date)}</td><td style="font-weight:700">R$ ${iv.toFixed(2)}</td><td class="${getStClass(st)}">${getStLabel(st)}</td></tr>`;
-      });
-    } else {
-      const st=getStatus(d);
-      html+=`<tr><td style="font-weight:700">1/1</td><td>${fmtDate(d.dataInicio)}</td><td style="font-weight:700">R$ ${d.valor.toFixed(2)}</td><td class="${getStClass(st)}">${getStLabel(st)}</td></tr>`;
-    }
-    const totalComb=rows.reduce((s,inst)=>s+(d.tipo==='parcelado'?getInstValor(d,inst):d.valor),0);
-    html+=`<tr style="background:#1e293b"><td colspan="2" style="font-weight:700;color:#94a3b8">TOTAL</td><td style="font-weight:700;color:#60a5fa">R$ ${totalComb.toFixed(2)}</td><td></td></tr>`;
-    html+=`</tbody></table></div>`;
-  });
-  document.getElementById('excelPreviewWrap').innerHTML=html||`<div style="padding:2rem;color:var(--muted);text-align:center">Nenhum dado encontrado para os filtros selecionados.</div>`;
-}
-function exportExcel(){
-  const {list,fMes,fAno}=getExportData();
-  const wb=XLSX.utils.book_new();
-  // Paleta de estilos
-  const S={
-    CLIENT_HDR:{fill:{fgColor:{rgb:'1E3A5F'}},font:{bold:true,color:{rgb:'FFFFFF'},sz:14},alignment:{horizontal:'center',vertical:'center'}},
-    INFO_LBL:{fill:{fgColor:{rgb:'EFF6FF'}},font:{bold:true,color:{rgb:'1E3A5F'},sz:10}},
-    INFO_VAL:{fill:{fgColor:{rgb:'FFFFFF'}},font:{color:{rgb:'111827'},sz:11}},
-    INFO_VAL_MONEY:{fill:{fgColor:{rgb:'FFFFFF'}},font:{bold:true,color:{rgb:'1d4ed8'},sz:11}},
-    COL_HDR:{fill:{fgColor:{rgb:'374151'}},font:{bold:true,color:{rgb:'F9FAFB'},sz:10},alignment:{horizontal:'center'}},
-    PAGO:{fill:{fgColor:{rgb:'C6EFCE'}},font:{bold:true,color:{rgb:'276221'}},alignment:{horizontal:'center'}},
-    NAO_PAGO:{fill:{fgColor:{rgb:'FFC7CE'}},font:{bold:true,color:{rgb:'9C0006'}},alignment:{horizontal:'center'}},
-    SO_JUROS:{fill:{fgColor:{rgb:'FCE4D6'}},font:{bold:true,color:{rgb:'8B3A0F'}},alignment:{horizontal:'center'}},
-    PENDENTE:{fill:{fgColor:{rgb:'DCE6F1'}},font:{bold:true,color:{rgb:'1F4E79'}},alignment:{horizontal:'center'}},
-    ROW_ALT:{fill:{fgColor:{rgb:'F8FAFC'}}},
-    TOTAL_ROW:{fill:{fgColor:{rgb:'DBEAFE'}},font:{bold:true,color:{rgb:'1E3A5F'},sz:11}},
-    SALDO_OK:{fill:{fgColor:{rgb:'D1FAE5'}},font:{bold:true,color:{rgb:'065F46'},sz:11}},
-    SALDO_NOK:{fill:{fgColor:{rgb:'FEE2E2'}},font:{bold:true,color:{rgb:'991B1B'},sz:11}},
-    MODO_TAG:{fill:{fgColor:{rgb:'FCE4D6'}},font:{bold:true,color:{rgb:'8B3A0F'},sz:9}},
-  };
-  const ST_S={'PAGO/PG':S.PAGO,'NÃO PAGO':S.NAO_PAGO,'SÓ JUROS':S.SO_JUROS,'PENDENTE':S.PENDENTE};
-  const FORMA_LABEL2={dinheiro:'💵 Dinheiro',pix:'⚡ PIX',credito:'💳 Crédito',debito:'🏧 Débito',boleto:'🧾 Boleto',transferencia:'🏦 Transferência'};
-  const sheetNames=new Set();
-  list.forEach(d=>{
-    let insts=[];
-    if(d.tipo==='parcelado'&&d.installments){
-      insts=d.installments.filter(inst=>{if(!fMes)return true;const[y,mo]=inst.date.split('-');return mo===fMes&&y===fAno;});
-    } else {
-      if(!fMes||d.dataInicio.startsWith(fAno+'-'+fMes)) insts=[{date:d.dataInicio,num:1,valor:d.valor}];
-    }
-    if(!insts.length)return;
-    const jv=calcJurosValor(d);
-    const saldo=calcSaldo(d);
-    const forma=FORMA_LABEL2[d.forma||'dinheiro']||d.forma||'—';
-    const pgCount=d.tipo==='parcelado'&&d.installments?d.installments.filter(i=>getInstStatus(d,i.num)==='pago').length:0;
-    const totalComb=insts.reduce((s,inst)=>s+getInstValor(d,inst),0);
-    const aoa=[];
-    // Row 0: Nome (cabeçalho)
-    aoa.push([d.nome,'','','','']);
-    // Row 1: empty
-    aoa.push(['','','','','']);
-    // Info block
-    aoa.push(['📅 Data do Empréstimo', fmtDate(d.dataInicio),'','','']);
-    aoa.push(['💰 Valor Emprestado', Number(d.valor.toFixed(2)),'','','']);
-    aoa.push(['💳 Forma de Pagamento', forma,'','','']);
-    if(d.tipo==='parcelado'){
-      const modoStr=d.modoParcelamento==='personalizado'?'Personalizado (acordo)':'Parcelas iguais';
-      aoa.push([`📦 Parcelas (${pgCount}/${d.parcelas} pagas)`, modoStr,'','','']);
-      if(d.temJuros)aoa.push(['📈 Taxa de Juros', `${d.taxaJuros}% — SÓ JUROS: R$ ${jv.toFixed(2)}/mês`,'','','']);
-    }
-    aoa.push(['💳 Saldo Devedor', Number(saldo.toFixed(2)),'','','']);
-    if(d.obs)aoa.push(['📝 Observações', d.obs,'','','']);
-    // Empty separator
-    aoa.push(['','','','','']);
-    // Column headers
-    const hRowIdx=aoa.length;
-    aoa.push(['PARCELA','DATA VENCIMENTO','VALOR COMBINADO','STATUS','OBS / ANOTAÇÃO']);
-    // Installment data
-    insts.forEach(inst=>{
-      const st=d.tipo==='parcelado'?(getInstStatus(d,inst.num)||(inst.date<today()?'atrasado':'pendente')):getStatus(d);
-      const stl=getStLabel(st);
-      const iv=getInstValor(d,inst);
-      const partLabel=d.tipo==='parcelado'?`${inst.num}/${d.parcelas}`:'1/1';
-      aoa.push([partLabel, fmtDate(inst.date), Number(iv.toFixed(2)), stl,'']);
-    });
-    // Empty + total
-    aoa.push(['','','','','']);
-    const totalRowIdx=aoa.length;
-    aoa.push(['TOTAL COMBINADO','', Number(totalComb.toFixed(2)),'','']);
-    const ws=XLSX.utils.aoa_to_sheet(aoa);
-    ws['!cols']=[{wch:18},{wch:20},{wch:20},{wch:20},{wch:35}];
-    if(!ws['!merges'])ws['!merges']=[];
-    // Style client header
-    ws['!merges'].push({s:{r:0,c:0},e:{r:0,c:4}});
-    for(let c=0;c<5;c++){const ref=XLSX.utils.encode_cell({r:0,c});if(ws[ref])ws[ref].s=S.CLIENT_HDR;}
-    // Style info rows (rows 2 to hRowIdx-2)
-    for(let r=2;r<hRowIdx-1;r++){
-      if(!aoa[r][0])continue;
-      const lRef=XLSX.utils.encode_cell({r,c:0});if(ws[lRef])ws[lRef].s=S.INFO_LBL;
-      const vRef=XLSX.utils.encode_cell({r,c:1});
-      if(ws[vRef])ws[vRef].s=(r===3||aoa[r][0].includes('Saldo'))?S.INFO_VAL_MONEY:S.INFO_VAL;
-    }
-    // Style column headers
-    for(let c=0;c<5;c++){const ref=XLSX.utils.encode_cell({r:hRowIdx,c});if(ws[ref])ws[ref].s=S.COL_HDR;}
-    // Style installment rows
-    for(let r=hRowIdx+1;r<totalRowIdx;r++){
-      if(!aoa[r][0])continue;
-      const stl=aoa[r][3];
-      if(stl&&ST_S[stl]){const ref=XLSX.utils.encode_cell({r,c:3});if(ws[ref])ws[ref].s=ST_S[stl];}
-      if(r%2===0){for(let c=0;c<5;c++){const ref=XLSX.utils.encode_cell({r,c});if(ws[ref]&&!(ws[ref].s))ws[ref].s=S.ROW_ALT;}}
-    }
-    // Style total row
-    ws['!merges'].push({s:{r:totalRowIdx,c:0},e:{r:totalRowIdx,c:1}});
-    for(let c=0;c<4;c++){const ref=XLSX.utils.encode_cell({r:totalRowIdx,c});if(ws[ref])ws[ref].s=S.TOTAL_ROW;}
-    // Style saldo info cell
-    for(let r=2;r<hRowIdx-1;r++){if(aoa[r][0]&&aoa[r][0].includes('Saldo')){const ref=XLSX.utils.encode_cell({r,c:1});if(ws[ref])ws[ref].s=saldo===0?S.SALDO_OK:S.SALDO_NOK;}}
-    // Sheet name (max 31 chars, no special chars)
-    let sheetName=d.nome.replace(/[\\/\?\*\[\]:]/g,'').trim().substring(0,31)||'Cliente';
-    let sn=sheetName,cnt=1;while(sheetNames.has(sn))sn=sheetName.substring(0,28)+`(${cnt++})`;
-    sheetNames.add(sn);
-    XLSX.utils.book_append_sheet(wb,ws,sn);
-  });
-  // ── Aba de Resumo ──
-  const pg2=debtors.filter(d=>getStatus(d)==='pago').length,at2=debtors.filter(d=>getStatus(d)==='atrasado').length,sj2=debtors.filter(d=>getStatus(d)==='sojuros').length,pe2=debtors.filter(d=>getStatus(d)==='pendente').length,sa2=debtors.reduce((s,d)=>s+calcSaldo(d),0);
-  const sumRows=[
-    ['COBRANÇAS PRO — RESUMO GERAL',''],
-    ['',''],
-    ['Total de Clientes', debtors.length],
-    ['Fichas Exportadas', list.length],
-    ['',''],
-    ['✅ Pagos em dia', pg2],
-    ['🔴 Não Pagaram', at2],
-    ['🟠 Só Juros', sj2],
-    ['🟡 Pendentes', pe2],
-    ['',''],
-    ['💰 Total a Receber (R$)', Number(sa2.toFixed(2))],
-    ['',''],
-    ['Exportado em', new Date().toLocaleString('pt-BR')],
-    ['Abas', [...sheetNames].join(', ')],
-  ];
-  const ws2=XLSX.utils.aoa_to_sheet(sumRows);
-  ws2['!cols']=[{wch:28},{wch:22}];
-  if(!ws2['!merges'])ws2['!merges']=[];
-  ws2['!merges'].push({s:{r:0,c:0},e:{r:0,c:1}});
-  const s2h=XLSX.utils.encode_cell({r:0,c:0});if(ws2[s2h])ws2[s2h].s=S.CLIENT_HDR;
-  // Color summary rows
-  const sumColors=[[5,S.PAGO],[6,S.NAO_PAGO],[7,S.SO_JUROS],[8,S.PENDENTE],[10,S.TOTAL_ROW]];
-  sumColors.forEach(([ri,st])=>{for(let c=0;c<2;c++){const ref=XLSX.utils.encode_cell({r:ri,c});if(ws2[ref])ws2[ref].s=st;}});
-  XLSX.utils.book_append_sheet(wb,ws2,'📋 Resumo');
-  const ds=new Date();
-  const fn=`cobrancas_${ds.getFullYear()}${String(ds.getMonth()+1).padStart(2,'0')}${String(ds.getDate()).padStart(2,'0')}.xlsx`;
-  XLSX.writeFile(wb,fn);
-  showToast(`📊 Excel exportado! ${sheetNames.size} ficha(s) em abas separadas.`,'green');
-}
-
-// ══════════════════════════════════════════
-//  SALVAR COMO RELATÓRIO HTML
-// ══════════════════════════════════════════
 // ══════════════════════════════════════════
 //  SALVAR RELATÓRIO HTML — com filtros e otimizado para impressão
 // ══════════════════════════════════════════
@@ -1781,7 +1463,6 @@ function gerarRelatorioHTML(){
         <td><b>Data Início</b></td><td>${fmtDate(d.dataInicio)}</td>
         <td><b>Valor</b></td><td>R$ ${d.valor.toFixed(2)}</td>
         <td><b>Saldo</b></td><td style="color:${saldo===0?'#10b981':'#ef4444'};font-weight:700">R$ ${saldo.toFixed(2)}</td>
-        ${d.temJuros?`<td><b>Juros</b></td><td>${d.taxaJuros}% — SÓ JUROS: R$ ${jv.toFixed(2)}</td>`:'<td></td><td></td>'}
       </tr></table>
       <table class="ficha-parcelas"><thead><tr><th>Parcela</th><th>Data Venc.</th><th>Valor</th><th>Status</th></tr></thead><tbody>${parcelasHtml}</tbody></table>
       ${d.obs?`<div class="ficha-obs">📝 ${d.obs}</div>`:''}
@@ -1974,16 +1655,6 @@ function confirmAIImport(){
   });
   save();closeModal('aiModal');buildDateDropdowns();buildAZIndex();renderTable();
   showToast(`✅ ${criados} cliente(s) importado(s) com sucesso!`,'green');
-}
-
-// ══════════════════════════════════════════
-//  CONFIG JUROS
-// ══════════════════════════════════════════
-function openJurosConfig(){ document.getElementById('cfgJuros').value=config.taxaJurosDefault; openModal('jurosModal'); }
-function saveJurosConfig(){
-  const v=parseFloat(document.getElementById('cfgJuros').value);
-  if(isNaN(v)||v<0){showToast('⚠ Taxa inválida!','red');return;}
-  config.taxaJurosDefault=v; save(); closeModal('jurosModal'); showToast(`✅ Taxa padrão: ${v}%`,'green');
 }
 
 // ══════════════════════════════════════════
@@ -2242,7 +1913,7 @@ function renderListaClientes(tipo){
           <div class="name-initial" style="width:34px;height:34px;font-size:13px;flex-shrink:0">${c.inicial}</div>
           <div style="min-width:0">
             <div class="cliente-folder-name">${c.nome}</div>
-            <div style="font-size:10px;color:var(--muted);margin-top:2px">${FORMA_LABEL[c.forma]||c.forma} · ${c.tipoCliente==='parcelado'?'Parcelado':'Pagamento Único'}${c.temJuros?` · 📈 ${c.taxaJuros}%`:''}</div>
+            <div style="font-size:10px;color:var(--muted);margin-top:2px">${FORMA_LABEL[c.forma]||c.forma} · ${c.tipoCliente==='parcelado'?'Parcelado':'Pagamento Único'}</div>
           </div>
         </div>
         <div class="cliente-folder-arrow">›</div>
@@ -2319,7 +1990,7 @@ function renderListaParcelas(tipo, clienteId){
     <div class="name-initial" style="width:40px;height:40px;font-size:15px;flex-shrink:0">${fc}</div>
     <div style="flex:1;min-width:0">
       <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:15px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${d.nome}</div>
-      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:3px">${sb}<span style="font-size:11px;color:var(--muted)">${FORMA_LABEL[d.forma]||d.forma}</span>${d.temJuros?`<span class="juros-badge">📈 ${d.taxaJuros}%</span>`:''}</div>
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:3px">${sb}<span style="font-size:11px;color:var(--muted)">${FORMA_LABEL[d.forma]||d.forma}</span></div>
     </div>
     <div style="text-align:right;flex-shrink:0">
       <div style="font-size:10px;color:var(--muted);text-transform:uppercase;font-weight:700">Saldo Devedor</div>
@@ -2328,7 +1999,6 @@ function renderListaParcelas(tipo, clienteId){
   </div>`;
 
   if(d.obs) html += `<div style="background:var(--surface);padding:9px 13px;border-radius:var(--r-sm);font-size:12px;color:var(--muted2);margin-bottom:12px;border:1px solid var(--border)">📝 ${d.obs}</div>`;
-  if(d.temJuros && jv>0) html += `<div class="info-box" style="margin-bottom:12px">🟠 <strong>SÓ JUROS = ${fmtBRL(jv)}/mês</strong> — NÃO abate a parcela.</div>`;
 
   if(!parcelas.length){
     html += `<div class="empty-state" style="padding:2rem"><div class="e-icon">📭</div><h3>Nenhuma parcela nesta categoria</h3></div>`;
@@ -2432,53 +2102,6 @@ function updateThemeIcon(isLight){
 initTheme();
 buildDateDropdowns(); buildAZIndex(); renderStats(); renderTable();
 // Nota: loadFromCloud e startRealtimeSync são chamados automaticamente pelo onAuthStateChanged
-</script>
-
-<script>
-// ══════════════════════════════════════════
-//  PWA: Service Worker + Install Prompt
-// ══════════════════════════════════════════
-let deferredInstallPrompt = null;
-
-// Registra o service worker
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('sw.js')
-      .then(reg => console.log('✅ Service Worker registrado, escopo:', reg.scope))
-      .catch(err => console.log('⚠️ SW não disponível (abra via servidor):', err));
-  });
-}
-
-// Captura o evento de instalação do Chrome
-window.addEventListener('beforeinstallprompt', (e) => {
-  e.preventDefault();
-  deferredInstallPrompt = e;
-  const btn = document.getElementById('installBtn');
-  if (btn) btn.style.display = 'inline-flex';
-});
-
-// Função do botão "Instalar App"
-function installPWA() {
-  if (!deferredInstallPrompt) {
-    showToast('App já instalado ou não disponível neste navegador.', 'blue');
-    return;
-  }
-  deferredInstallPrompt.prompt();
-  deferredInstallPrompt.userChoice.then(choice => {
-    if (choice.outcome === 'accepted') {
-      showToast('✅ App instalado com sucesso!', 'green');
-      document.getElementById('installBtn').style.display = 'none';
-    }
-    deferredInstallPrompt = null;
-  });
-}
-
-// Quando o app for instalado, esconde o botão
-window.addEventListener('appinstalled', () => {
-  document.getElementById('installBtn').style.display = 'none';
-  deferredInstallPrompt = null;
-  showToast('🎉 Finance Pro instalado!', 'green');
-});
 </script>
 
 <!-- MODAL: SALVAR RELATÓRIO HTML (com filtros) -->
