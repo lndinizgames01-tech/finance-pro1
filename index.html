@@ -761,7 +761,7 @@ try {
 } catch(e) {}
 
 let editingId=null, tipoSelecionado='unico', formaSelecionada='dinheiro', modoParcelamento='igual';
-let azFiltro='', clientCalId=null, clientCalYear=new Date().getFullYear(), calYear=new Date().getFullYear();
+let azFiltro='', clientCalId=null, clientCalYear=new Date().getFullYear(), calYear=new Date().getFullYear(), calDay=today();
 let _isSyncing = false;
 
 // ══════════════════════════════════════════
@@ -1313,25 +1313,107 @@ function renderClientCal(){
 }
 function marcarParcelaCal(id,n,st){const idx=debtors.findIndex(x=>x.id===id);setInstStatus(idx,n,st);save();renderTable();}
 function marcarUnicoCal(id,st){const idx=debtors.findIndex(x=>x.id===id);debtors[idx].statusManual=st;debtors[idx].pago=st==='pago';save();renderTable();}
-function openCalModal(){clientCalId=null;calYear=new Date().getFullYear();document.getElementById('calModalTitle').textContent='📅 Calendário Geral';document.getElementById('calModalSub').textContent='Visão consolidada por mês';renderGeneralCal();openModal('calModal');}
+function openCalModal(){clientCalId=null;calYear=new Date().getFullYear();calDay=today();document.getElementById('calModalTitle').textContent='📅 Calendário Geral';document.getElementById('calModalSub').textContent='Visão consolidada por mês';renderGeneralCal();openModal('calModal');}
+
+function calDayShift(delta){
+  const d=new Date(calDay+'T12:00:00');
+  d.setDate(d.getDate()+delta);
+  calDay=d.toISOString().slice(0,10);
+  renderGeneralCal();
+}
+function calDaySet(val){if(val)calDay=val;renderGeneralCal();}
+
 function renderGeneralCal(){
   const now=new Date();
-  let html=`<div class="pcal-year-nav"><button class="cal-nav-btn" onclick="calYear--;renderGeneralCal()">‹</button><span class="pcal-year-label" style="font-size:1.15rem">${calYear}</span><button class="cal-nav-btn" onclick="calYear++;renderGeneralCal()">›</button></div>`;
+  const todayStr=today();
+
+  /* ── PAINEL: COBRANÇAS DO DIA ── */
+  const dayDt=new Date(calDay+'T12:00:00');
+  const dayLabel=dayDt.toLocaleDateString('pt-BR',{weekday:'long',day:'2-digit',month:'long',year:'numeric'});
+  const isToday=calDay===todayStr;
+
+  let dayCli=[];
+  debtors.forEach(d=>{
+    let val=0,iNum=null,instDate=null;
+    if(d.tipo==='parcelado'&&d.installments){
+      const i=d.installments.find(x=>x.date===calDay);
+      if(i){val=getInstValor(d,i);iNum=i.num;instDate=i.date;}
+    } else {
+      if(d.dataInicio===calDay){val=d.valor;instDate=d.dataInicio;}
+    }
+    if(!val)return;
+    const st=iNum?(getInstStatus(d,iNum)||(instDate<todayStr?'atrasado':'pendente')):getStatus(d);
+    dayCli.push({d,st,val,iNum});
+  });
+
+  const stColor={pago:'var(--green)',pendente:'var(--yellow)',atrasado:'var(--red)',sojuros:'var(--orange)'};
+  const stLabel={pago:'✅ Pago',pendente:'⏳ Pendente',atrasado:'🔴 Não Pagou',sojuros:'🟠 Só Juros'};
+  const totalDia=dayCli.reduce((s,x)=>s+x.val,0);
+
+  let html=`<div style="background:linear-gradient(135deg,rgba(96,165,250,.12),rgba(129,140,248,.08));border:1px solid rgba(96,165,250,.3);border-radius:var(--r);padding:1rem 1.2rem;margin-bottom:1.5rem">`;
+  html+=`<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:.8rem">`;
+  html+=`<div style="display:flex;align-items:center;gap:6px">`;
+  html+=`<span style="font-size:1.3rem">📆</span>`;
+  html+=`<div><div style="font-family:'Syne',sans-serif;font-weight:800;font-size:.95rem;color:var(--accent)">Cobranças do Dia${isToday?' <span style=\'font-size:10px;background:var(--green-bg);color:var(--green);border:1px solid var(--green-bdr);border-radius:5px;padding:1px 6px;vertical-align:middle\'>HOJE</span>':''}</div>`;
+  html+=`<div style="font-size:11px;color:var(--muted);text-transform:capitalize">${dayLabel}</div></div></div>`;
+  html+=`<div style="display:flex;align-items:center;gap:6px">`;
+  html+=`<button class="cal-nav-btn" onclick="calDayShift(-1)" title="Dia anterior">‹</button>`;
+  html+=`<input type="date" value="${calDay}" onchange="calDaySet(this.value)" style="width:auto;min-width:0;padding:5px 8px;font-size:12px;background:#0f1729;border:1px solid rgba(96,165,250,.3);color:var(--text);border-radius:7px;cursor:pointer">`;
+  html+=`<button class="cal-nav-btn" onclick="calDayShift(1)" title="Próximo dia">›</button>`;
+  if(!isToday)html+=`<button class="cal-nav-btn" onclick="calDay=today();renderGeneralCal()" title="Voltar para hoje" style="font-size:11px;width:auto;padding:0 8px">Hoje</button>`;
+  html+=`</div></div>`;
+
+  if(!dayCli.length){
+    html+=`<div style="text-align:center;padding:1rem;color:var(--muted);font-size:13px">Nenhum cliente com vencimento neste dia.</div>`;
+  } else {
+    html+=`<div style="display:flex;align-items:center;gap:8px;margin-bottom:.7rem;flex-wrap:wrap">`;
+    html+=`<span style="font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:600;color:var(--muted2)">${dayCli.length} cliente${dayCli.length>1?'s':''} · ${fmtBRL(totalDia)}</span>`;
+    html+=`</div>`;
+    html+=`<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:8px">`;
+    dayCli.forEach(({d,st,val,iNum})=>{
+      const mkF=(s)=>iNum?`marcarParcelaCal('${d.id}',${iNum},'${s}');renderGeneralCal()`:`marcarUnicoCal('${d.id}','${s}');renderGeneralCal()`;
+      const parcelaInfo=iNum?`<span style="font-size:10px;color:var(--muted)">Parcela ${iNum}${d.parcelas?'/'+d.parcelas:''}</span>`:`<span style="font-size:10px;color:var(--muted)">Cobrança única</span>`;
+      html+=`<div style="background:var(--surface);border:1px solid ${stColor[st]||'var(--border)'};border-radius:9px;padding:10px;position:relative;overflow:hidden">`;
+      html+=`<div style="position:absolute;top:0;left:0;right:0;height:3px;background:${stColor[st]||'var(--border)'}"></div>`;
+      html+=`<div style="display:flex;align-items:center;gap:7px;margin-bottom:5px">`;
+      html+=`<div style="width:26px;height:26px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-weight:800;font-size:11px;color:#fff;flex-shrink:0">${d.nome.charAt(0).toUpperCase()}</div>`;
+      html+=`<div><div style="font-weight:700;font-size:13px">${d.nome}</div>${parcelaInfo}</div></div>`;
+      html+=`<div style="font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:600;color:var(--accent);margin-bottom:6px">${fmtBRL(val)}</div>`;
+      html+=`<div style="font-size:10px;font-weight:700;color:${stColor[st]||'var(--muted)'};margin-bottom:6px">${stLabel[st]||st}</div>`;
+      html+=`<div style="display:flex;gap:3px"><button class="pcal-cycle-btn ${st==='pago'?'pago-active':''}" style="flex:1" onclick="${mkF('pago')}">✅</button><button class="pcal-cycle-btn ${st==='pendente'?'pendente-active':''}" style="flex:1" onclick="${mkF('pendente')}">⏳</button>${d.temJuros?`<button class="pcal-cycle-btn ${st==='sojuros'?'sojuros-active':''}" style="flex:1" onclick="${mkF('sojuros')}">🟠</button>`:''}<button class="pcal-cycle-btn ${st==='atrasado'?'atrasado-active':''}" style="flex:1" onclick="${mkF('atrasado')}">❌</button></div>`;
+      html+=`</div>`;
+    });
+    html+=`</div>`;
+  }
+  html+=`</div>`;
+
+  /* ── VISÃO MENSAL ── */
+  html+=`<div class="pcal-year-nav"><button class="cal-nav-btn" onclick="calYear--;renderGeneralCal()">‹</button><span class="pcal-year-label" style="font-size:1.15rem">${calYear}</span><button class="cal-nav-btn" onclick="calYear++;renderGeneralCal()">›</button></div>`;
+
   for(let m=0;m<12;m++){
     const isCur=calYear===now.getFullYear()&&m===now.getMonth();
     let mPg=0,mSJ=0,mAt=0,mPe=0,mTot=0,cli=[];
     debtors.forEach(d=>{
-      let val=0,iNum=null;
-      if(d.tipo==='parcelado'&&d.installments){const i=d.installments.find(x=>{const dt=new Date(x.date+'T12:00:00');return dt.getFullYear()===calYear&&dt.getMonth()===m;});if(i){val=getInstValor(d,i);iNum=i.num;}}
-      else{const dt=new Date(d.dataInicio+'T12:00:00');if(dt.getFullYear()===calYear&&dt.getMonth()===m)val=d.valor;}
+      let val=0,iNum=null,instDate=null;
+      if(d.tipo==='parcelado'&&d.installments){const i=d.installments.find(x=>{const dt=new Date(x.date+'T12:00:00');return dt.getFullYear()===calYear&&dt.getMonth()===m;});if(i){val=getInstValor(d,i);iNum=i.num;instDate=i.date;}}
+      else{const dt=new Date(d.dataInicio+'T12:00:00');if(dt.getFullYear()===calYear&&dt.getMonth()===m){val=d.valor;instDate=d.dataInicio;}}
       if(!val)return; mTot+=val;
-      const st=iNum?(getInstStatus(d,iNum)||(d.installments.find(x=>x.num===iNum)?.date<today()?'atrasado':'pendente')):getStatus(d);
+      const st=iNum?(getInstStatus(d,iNum)||(instDate<todayStr?'atrasado':'pendente')):getStatus(d);
       if(st==='pago')mPg+=val;else if(st==='sojuros')mSJ+=val;else if(st==='atrasado')mAt+=val;else mPe+=val;
-      cli.push({d,st,val,iNum});
+      cli.push({d,st,val,iNum,instDate});
     });
     html+=`<div style="margin-bottom:1.2rem"><div style="display:flex;align-items:center;gap:8px;margin-bottom:.5rem;flex-wrap:wrap"><span style="font-family:'Syne',sans-serif;font-weight:700;color:${isCur?'var(--accent)':'var(--text)'}">${MESES[m]}${isCur?' ◉':''}</span><span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--muted)">${fmtBRL(mTot)}</span>${mPg>0?`<span class="badge badge-green" style="font-size:10px">${fmtBRL(mPg)}</span>`:''}${mSJ>0?`<span class="badge badge-orange" style="font-size:10px">🟠 ${fmtBRL(mSJ)}</span>`:''}${mAt>0?`<span class="badge badge-red" style="font-size:10px">${fmtBRL(mAt)}</span>`:''}${mPe>0?`<span class="badge badge-yellow" style="font-size:10px">${fmtBRL(mPe)}</span>`:''}</div>`;
     if(!cli.length)html+=`<div style="font-size:12px;color:var(--muted);padding:6px;background:var(--surface);border-radius:6px">Nenhum vencimento.</div>`;
-    else{html+=`<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:7px">`;cli.forEach(({d,st,val,iNum})=>{const mkF=(s)=>iNum?`marcarParcelaCal('${d.id}',${iNum},'${s}');renderGeneralCal()`:`marcarUnicoCal('${d.id}','${s}');renderGeneralCal()`;html+=`<div style="background:var(--surface);border:1px solid var(--border);border-radius:7px;padding:9px"><div style="font-weight:700;font-size:12px;margin-bottom:3px">${d.nome}</div><div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--muted2);margin-bottom:5px">${fmtBRL(val)}</div><div style="display:flex;gap:3px"><button class="pcal-cycle-btn ${st==='pago'?'pago-active':''}" style="flex:1" onclick="${mkF('pago')}">✅</button><button class="pcal-cycle-btn ${st==='pendente'?'pendente-active':''}" style="flex:1" onclick="${mkF('pendente')}">⏳</button>${d.temJuros?`<button class="pcal-cycle-btn ${st==='sojuros'?'sojuros-active':''}" style="flex:1" onclick="${mkF('sojuros')}">🟠</button>`:''}<button class="pcal-cycle-btn ${st==='atrasado'?'atrasado-active':''}" style="flex:1" onclick="${mkF('atrasado')}">❌</button></div></div>`;});html+=`</div>`;}
+    else{
+      html+=`<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:7px">`;
+      cli.forEach(({d,st,val,iNum,instDate})=>{
+        const mkF=(s)=>iNum?`marcarParcelaCal('${d.id}',${iNum},'${s}');renderGeneralCal()`:`marcarUnicoCal('${d.id}','${s}');renderGeneralCal()`;
+        const diaNum=instDate?new Date(instDate+'T12:00:00').getDate():'';
+        const diaBtn=instDate?`<button onclick="calDay='${instDate}';renderGeneralCal();document.getElementById('calContent').scrollTop=0" style="font-size:9px;padding:1px 5px;border-radius:4px;background:rgba(96,165,250,.1);color:var(--accent);border:1px solid rgba(96,165,250,.25);cursor:pointer;font-family:'Lato',sans-serif;font-weight:700;margin-left:2px" title="Ver cobranças do dia ${diaNum}">dia ${diaNum} 📆</button>`:'';
+        html+=`<div style="background:var(--surface);border:1px solid var(--border);border-radius:7px;padding:9px"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:3px"><div style="font-weight:700;font-size:12px">${d.nome}</div>${diaBtn}</div><div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--muted2);margin-bottom:5px">${fmtBRL(val)}</div><div style="display:flex;gap:3px"><button class="pcal-cycle-btn ${st==='pago'?'pago-active':''}" style="flex:1" onclick="${mkF('pago')}">✅</button><button class="pcal-cycle-btn ${st==='pendente'?'pendente-active':''}" style="flex:1" onclick="${mkF('pendente')}">⏳</button>${d.temJuros?`<button class="pcal-cycle-btn ${st==='sojuros'?'sojuros-active':''}" style="flex:1" onclick="${mkF('sojuros')}">🟠</button>`:''}<button class="pcal-cycle-btn ${st==='atrasado'?'atrasado-active':''}" style="flex:1" onclick="${mkF('atrasado')}">❌</button></div></div>`;
+      });
+      html+=`</div>`;
+    }
     html+=`</div>`;if(m<11)html+=`<hr style="border:none;border-top:1px solid var(--border2);margin-bottom:1.2rem">`;
   }
   document.getElementById('calContent').innerHTML=html;
