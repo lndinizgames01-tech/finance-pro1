@@ -192,8 +192,11 @@ body::after{content:'';position:fixed;inset:0;background:url('https://images.uns
 .toolbar-row+.toolbar-row{margin-top:10px;padding-top:10px;border-top:1px solid var(--border)}
 .toolbar-label{font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.07em;white-space:nowrap}
 input[type="text"],input[type="number"],input[type="date"],select,textarea{font-family:'Lato',sans-serif;font-size:13px;background:var(--input-bg);border:1px solid var(--input-border);color:var(--text);border-radius:var(--r-sm);padding:8px 12px;outline:none;width:100%;transition:all .25s cubic-bezier(.4,0,.2,1);-webkit-appearance:none}
+select{background-color:#0f1729;color:#f1f5f9}
+[data-theme="light"] select{background-color:#f8fafc;color:#1e293b}
 input:focus,select:focus,textarea:focus{background:var(--card);border-color:var(--accent);box-shadow:0 0 0 3px rgba(96,165,250,.2),0 0 20px rgba(96,165,250,.1)}
-select option{background:var(--card);color:var(--text)}
+select option{background:#0f1729;color:#f1f5f9}
+[data-theme="light"] select option{background:#ffffff;color:#1e293b}
 .search-wrap{position:relative;flex:1;min-width:180px}
 .search-wrap input{padding-left:34px}
 .search-icon{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--muted);pointer-events:none;width:14px;height:14px}
