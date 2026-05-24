@@ -1224,12 +1224,11 @@ function saveDebtor(){
       return {num,date,valor:valorParcela,pago:lg?lg[instKey(num)]==='pago':false,soJuros:lg?lg[instKey(num)]==='sojuros':false,paidAt:lg&&lg[instKey(num)]==='pago'?today():(old?.paidAt||null)};
     });
     if(editingId){const idx=debtors.findIndex(x=>x.id===editingId);const old=debtors[idx];const lg=old.installmentLog||{};const insts=buildInsts(n,dataInicio,lg,old.installments);
-      // Preservar meses extras ao editar
       const extrasOld=(old.installments||[]).filter(i=>i.extra);
       const allInsts=[...insts,...extrasOld];
       const novoTotal=allInsts.length>0?Math.max(...allInsts.map(i=>i.num)):n;
       debtors[idx]={...old,...base,parcelas:novoTotal,parcelasOriginais:n,modoParcelamento,installments:allInsts,installmentLog:lg};}
-    else{const insts=buildInsts(n,dataInicio,null,null);debtors.push({id:Date.now().toString(),...base,parcelas:n,modoParcelamento,pago:false,installments:insts,installmentLog:{}});}
+    else{const insts=buildInsts(n,dataInicio,null,null);debtors.push({id:Date.now().toString(),...base,parcelas:n,parcelasOriginais:n,modoParcelamento,pago:false,installments:insts,installmentLog:{}});}
   } else {
     if(editingId){const idx=debtors.findIndex(x=>x.id===editingId);debtors[idx]={...debtors[idx],...base,pago:false};}
     else debtors.push({id:Date.now().toString(),...base,pago:false,installmentLog:{}});
@@ -1257,21 +1256,21 @@ function openDetail(id){
   </div>`;
   if(d.obs)html+=`<div style="background:var(--surface);padding:9px 13px;border-radius:var(--r-sm);font-size:12px;color:var(--muted2);margin-bottom:10px;border:1px solid var(--border)">📝 ${d.obs}</div>`;
   if(d.tipo==='parcelado'&&d.installments){
-    const nOrig=d.parcelasOriginais||d.parcelas;
+    const nOrig=d.parcelasOriginais||d.installments.filter(i=>!i.extra).length||d.parcelas;
+    const temExtras=d.installments.some(i=>i.extra);
+    html+=`<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:8px">
+      <span style="font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.06em">📋 Parcelas do Acordo (${nOrig}x)</span>
+      <button onclick="adicionarMesExtra('${d.id}')" style="font-size:11px;padding:5px 12px;border-radius:var(--r-sm);background:rgba(251,146,60,.15);color:var(--orange);border:1px solid var(--orange-bdr);cursor:pointer;font-family:'Lato',sans-serif;font-weight:700;display:inline-flex;align-items:center;gap:5px" title="Adicionar um mês extra fora do acordo">📅 + Mês Extra</button>
+    </div>`;
     html+=`<div class="inst-list">`;
-    d.installments.forEach(inst=>{
-      const isExtra=!!inst.extra;
+    // Parcelas originais primeiro
+    const originais=d.installments.filter(i=>!i.extra);
+    const extras=d.installments.filter(i=>i.extra);
+    originais.forEach(inst=>{
       const iv=getInstValor(d,inst);
       const st=getInstStatus(d,inst.num)||(inst.date<today()?'atrasado':'pendente');
-      const cls=isExtra?'so-juros':(st==='pago'?'paid':st==='sojuros'?'so-juros':st==='atrasado'?'due':'future');
+      const cls=st==='pago'?'paid':st==='sojuros'?'so-juros':st==='atrasado'?'due':'future';
       const stlabel=st==='pago'?`<span style="color:var(--green);font-weight:700;font-size:12px">✅ PAGO</span>`:st==='sojuros'?`<span style="color:var(--orange);font-weight:700;font-size:12px">🟠 SÓ JUROS</span>`:st==='atrasado'?`<span style="color:var(--red);font-weight:700;font-size:12px">🔴 NÃO PAGOU</span>`:`<span style="color:var(--yellow);font-weight:700;font-size:12px">🟡 PENDENTE</span>`;
-      const tituloLabel=isExtra
-        ? `<span style="display:inline-flex;align-items:center;gap:6px;flex-wrap:wrap">
-             <span style="font-weight:700;font-size:13px">📅 Mês Extra — ${fmtDate(inst.date)}</span>
-             <span style="font-size:10px;background:rgba(251,146,60,.2);color:var(--orange);border:1px solid var(--orange-bdr);border-radius:4px;padding:1px 6px">FORA DO ACORDO</span>
-             <button onclick="excluirParcelaExtra('${d.id}',${inst.num})" style="font-size:10px;padding:2px 9px;border-radius:5px;background:var(--red-bg);color:var(--red);border:1px solid var(--red-bdr);cursor:pointer;font-family:'Lato',sans-serif;font-weight:700;display:inline-flex;align-items:center;gap:3px" title="Remover este mês extra">🗑 Remover</button>
-           </span>`
-        : `<span style="font-weight:700;font-size:13px">Parcela ${inst.num}/${nOrig} — ${fmtDate(inst.date)}</span>`;
       const valorDisplay = iv===0
         ? `<span style="display:inline-flex;align-items:center;gap:4px">
              <input type="number" id="vp_${inst.num}" value="0" min="0" step="0.01" placeholder="R$ 0,00"
@@ -1287,20 +1286,68 @@ function openDetail(id){
                onkeydown="if(event.key==='Enter')salvarValorParcela('${d.id}',${inst.num},this)">
              <button onclick="salvarValorParcela('${d.id}',${inst.num},document.getElementById('vpei_${inst.num}'))" style="font-size:10px;padding:3px 7px;border-radius:5px;background:rgba(52,211,153,.15);color:var(--green);border:1px solid var(--green-bdr);cursor:pointer;font-family:'Lato',sans-serif;font-weight:700">✔ OK</button>
            </span>`;
-      html+=`<div class="inst-item ${cls}" style="${isExtra?'border-style:dashed;opacity:.95':''}">
+      html+=`<div class="inst-item ${cls}">
         <div style="flex:1">
-          <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;flex-wrap:wrap">${tituloLabel}</div>
-          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px">${valorDisplay}${isExtra?'':`${stlabel}`}</div>
+          <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;flex-wrap:wrap"><span style="font-weight:700;font-size:13px">Parcela ${inst.num}/${nOrig} — ${fmtDate(inst.date)}</span></div>
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px">${valorDisplay} ${stlabel}</div>
           <div class="inst-status-btns">
             <button class="inst-status-btn isb-pago ${st==='pago'?'active-btn':''}" onclick="marcarParcela('${d.id}',${inst.num},'pago')">✅ PAGO/PG</button>
-            ${isExtra?'':`<button class="inst-status-btn isb-pendente ${st==='pendente'?'active-btn':''}" onclick="marcarParcela('${d.id}',${inst.num},'pendente')">🟡 PENDENTE</button>
+            <button class="inst-status-btn isb-pendente ${st==='pendente'?'active-btn':''}" onclick="marcarParcela('${d.id}',${inst.num},'pendente')">🟡 PENDENTE</button>
             <button class="inst-status-btn isb-sojuros ${st==='sojuros'?'active-btn':''}" onclick="marcarParcela('${d.id}',${inst.num},'sojuros')">🟠 SÓ JUROS</button>
             <button class="inst-status-btn isb-naopagou ${st==='atrasado'?'active-btn':''}" onclick="marcarParcela('${d.id}',${inst.num},'atrasado')">🔴 NÃO PAGOU</button>
-            ${st==='sojuros'?`<button class="inst-status-btn" style="background:rgba(96,165,250,.15);color:var(--accent);border:1px solid rgba(96,165,250,.4);margin-left:4px" onclick="prorrogarMes('${d.id}',${inst.num})">📅 +1 MÊS</button>`:''}`}
           </div>
         </div>
       </div>`;
     });
+    // Meses extras com separador visual
+    if(extras.length){
+      html+=`<div style="margin:14px 0 8px;padding:8px 12px;background:rgba(251,146,60,.08);border:1px dashed var(--orange-bdr);border-radius:var(--r-sm);display:flex;align-items:center;gap:8px">
+        <span style="font-size:16px">📅</span>
+        <div>
+          <div style="font-size:11px;font-weight:700;color:var(--orange);text-transform:uppercase;letter-spacing:.06em">Meses Extras — Fora do Acordo</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:1px">Esses meses não fazem parte do acordo original. Valores e datas são editáveis.</div>
+        </div>
+      </div>`;
+      extras.forEach(inst=>{
+        const iv=inst.valor||0;
+        const st=getInstStatus(d,inst.num)||(inst.date<today()?'atrasado':'pendente');
+        const valorDisplay = iv===0
+          ? `<span style="display:inline-flex;align-items:center;gap:4px">
+               <span style="font-size:11px;color:var(--muted)">Valor:</span>
+               <input type="number" id="vp_${inst.num}" value="0" min="0" step="0.01" placeholder="0,00"
+                 style="width:90px;padding:3px 7px;font-size:12px;font-family:'IBM Plex Mono',monospace;background:#0f1729;border:1px solid rgba(96,165,250,.4);color:var(--accent);border-radius:6px;text-align:right"
+                 onkeydown="if(event.key==='Enter')salvarValorParcela('${d.id}',${inst.num},this)">
+               <button onclick="salvarValorParcela('${d.id}',${inst.num},document.getElementById('vp_${inst.num}'))" style="font-size:10px;padding:3px 7px;border-radius:5px;background:rgba(52,211,153,.15);color:var(--green);border:1px solid var(--green-bdr);cursor:pointer;font-family:'Lato',sans-serif;font-weight:700">✔ OK</button>
+             </span>`
+          : `<span style="font-size:11px;color:var(--muted)">Valor:</span>
+             <span class="mono" style="font-size:13px;font-weight:600">${fmtBRL(iv)}</span>
+             <button onclick="const el=document.getElementById('vpe_${inst.num}');el.style.display=el.style.display==='none'?'inline-flex':'none'" style="font-size:10px;padding:2px 6px;border-radius:4px;background:rgba(255,255,255,.06);color:var(--muted);border:1px solid var(--border);cursor:pointer">✏️</button>
+             <span id="vpe_${inst.num}" style="display:none;align-items:center;gap:4px">
+               <input type="number" value="${iv}" min="0" step="0.01" id="vpei_${inst.num}"
+                 style="width:90px;padding:3px 7px;font-size:12px;font-family:'IBM Plex Mono',monospace;background:#0f1729;border:1px solid rgba(96,165,250,.4);color:var(--accent);border-radius:6px;text-align:right"
+                 onkeydown="if(event.key==='Enter')salvarValorParcela('${d.id}',${inst.num},this)">
+               <button onclick="salvarValorParcela('${d.id}',${inst.num},document.getElementById('vpei_${inst.num}'))" style="font-size:10px;padding:3px 7px;border-radius:5px;background:rgba(52,211,153,.15);color:var(--green);border:1px solid var(--green-bdr);cursor:pointer;font-family:'Lato',sans-serif;font-weight:700">✔ OK</button>
+             </span>`;
+        html+=`<div class="inst-item so-juros" style="border-style:dashed">
+          <div style="flex:1">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap">
+              <span style="font-weight:700;font-size:13px;color:var(--orange)">📅 Mês Extra</span>
+              <span style="font-size:11px;color:var(--muted)">Data:</span>
+              <input type="date" value="${inst.date}"
+                style="padding:3px 8px;font-size:12px;background:#0f1729;border:1px solid rgba(251,146,60,.4);color:var(--orange);border-radius:6px;font-family:'IBM Plex Mono',monospace"
+                onchange="salvarDataParcelaExtra('${d.id}',${inst.num},this.value)" title="Editar data deste mês extra">
+              <button onclick="excluirParcelaExtra('${d.id}',${inst.num})" style="font-size:10px;padding:3px 10px;border-radius:5px;background:var(--red-bg);color:var(--red);border:1px solid var(--red-bdr);cursor:pointer;font-family:'Lato',sans-serif;font-weight:700;margin-left:auto">🗑 Remover</button>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px">${valorDisplay}</div>
+            <div class="inst-status-btns">
+              <button class="inst-status-btn isb-pago ${st==='pago'?'active-btn':''}" onclick="marcarParcela('${d.id}',${inst.num},'pago')">✅ PAGO</button>
+              <button class="inst-status-btn isb-pendente ${st==='pendente'?'active-btn':''}" onclick="marcarParcela('${d.id}',${inst.num},'pendente')">🟡 PENDENTE</button>
+              <button class="inst-status-btn isb-naopagou ${st==='atrasado'?'active-btn':''}" onclick="marcarParcela('${d.id}',${inst.num},'atrasado')">🔴 NÃO PAGOU</button>
+            </div>
+          </div>
+        </div>`;
+      });
+    }
     html+=`</div>`;
   } else {
     const st2=getStatus(d);
@@ -1325,34 +1372,27 @@ function marcarUnico(id,st){
   save();renderTable();openDetail(id);
 }
 
-// ── PRORROGAR MÊS (adiciona nova parcela quando cliente pagou só juros) ──
-function prorrogarMes(id, instNum){
+// ── MESES EXTRAS ──
+function _addMesExtra(id, refresh){
   const idx=debtors.findIndex(x=>x.id===id);
   const d=debtors[idx]; if(!d||d.tipo!=='parcelado')return;
-  if(!d.parcelasOriginais) d.parcelasOriginais=d.parcelas;
+  if(!d.parcelasOriginais) d.parcelasOriginais=d.installments.filter(i=>!i.extra).length||d.parcelas;
   const lastInst=d.installments.slice().sort((a,b)=>b.num-a.num)[0];
   const novaData=addMonths(lastInst.date,1);
   const novoNum=d.parcelas+1;
   d.installments.push({num:novoNum,date:novaData,valor:0,pago:false,soJuros:false,paidAt:null,extra:true});
   d.parcelas=novoNum;
-  save();renderTable();openDetail(id);
-  showToast(`📅 Mês extra adicionado para ${fmtDate(novaData)}!`,'orange');
+  save();renderTable();refresh(id);
+  showToast(`📅 Mês extra adicionado: ${fmtDate(novaData)} — edite a data se precisar`,'orange');
 }
-function prorrogarMesLista(id, instNum){
-  const idx=debtors.findIndex(x=>x.id===id);
-  const d=debtors[idx]; if(!d||d.tipo!=='parcelado')return;
-  if(!d.parcelasOriginais) d.parcelasOriginais=d.parcelas;
-  const lastInst=d.installments.slice().sort((a,b)=>b.num-a.num)[0];
-  const novaData=addMonths(lastInst.date,1);
-  const novoNum=d.parcelas+1;
-  d.installments.push({num:novoNum,date:novaData,valor:0,pago:false,soJuros:false,paidAt:null,extra:true});
-  d.parcelas=novoNum;
-  save();renderTable();renderListaModal();
-  showToast(`📅 Mês extra adicionado para ${fmtDate(novaData)}!`,'orange');
-}
+function adicionarMesExtra(id){ _addMesExtra(id, openDetail); }
+function prorrogarMes(id){ _addMesExtra(id, openDetail); }
+function prorrogarMesLista(id){ _addMesExtra(id, ()=>renderListaModal()); }
+
 function excluirParcelaExtra(id, instNum){
   const idx=debtors.findIndex(x=>x.id===id);
   const d=debtors[idx]; if(!d)return;
+  if(!confirm('Remover este mês extra?'))return;
   d.installments=d.installments.filter(i=>i.num!==instNum);
   d.parcelas=d.installments.length>0?Math.max(...d.installments.map(i=>i.num)):(d.parcelasOriginais||0);
   save();renderTable();openDetail(id);
@@ -1361,10 +1401,25 @@ function excluirParcelaExtra(id, instNum){
 function excluirParcelaExtraLista(id, instNum){
   const idx=debtors.findIndex(x=>x.id===id);
   const d=debtors[idx]; if(!d)return;
+  if(!confirm('Remover este mês extra?'))return;
   d.installments=d.installments.filter(i=>i.num!==instNum);
   d.parcelas=d.installments.length>0?Math.max(...d.installments.map(i=>i.num)):(d.parcelasOriginais||0);
   save();renderTable();renderListaModal();
   showToast('🗑 Mês extra removido.','red');
+}
+function salvarDataParcelaExtra(id, instNum, novaData){
+  if(!novaData)return;
+  const idx=debtors.findIndex(x=>x.id===id);
+  const d=debtors[idx]; if(!d)return;
+  const inst=d.installments.find(x=>x.num===instNum);
+  if(inst){ inst.date=novaData; save(); renderTable(); openDetail(id); showToast('📅 Data atualizada!','green'); }
+}
+function salvarDataParcelaExtraLista(id, instNum, novaData){
+  if(!novaData)return;
+  const idx=debtors.findIndex(x=>x.id===id);
+  const d=debtors[idx]; if(!d)return;
+  const inst=d.installments.find(x=>x.num===instNum);
+  if(inst){ inst.date=novaData; save(); renderTable(); renderListaModal(); showToast('📅 Data atualizada!','green'); }
 }
 function salvarValorParcela(id, instNum, inputEl){
   const idx=debtors.findIndex(x=>x.id===id);
@@ -1610,20 +1665,36 @@ function gerarRelatorioHTML(){
       const filtered=d.installments.filter(inst=>{if(!fMes)return true;const[y,mo]=inst.date.split('-');return mo===fMes&&y===fAno;});
       if(filtered.length){
         hasData=true;
+        const filtOrig=filtered.filter(i=>!i.extra);
+        const filtExtra=filtered.filter(i=>i.extra);
         if(reportConteudo==='completo'){
-          filtered.forEach(inst=>{
+          const nOrig=d.parcelasOriginais||d.installments.filter(i=>!i.extra).length||d.parcelas;
+          filtOrig.forEach(inst=>{
             const iv=getInstValor(d,inst);
             const st=getInstStatus(d,inst.num)||(inst.date<today()?'atrasado':'pendente');
-            parcelasHtml+=`<tr><td>${inst.num}/${d.parcelas}</td><td>${fmtDate(inst.date)}</td><td>R$ ${iv.toFixed(2)}</td><td style="background:${ST_BG[st]};color:${ST_COLOR[st]};font-weight:700;text-align:center">${ST_LABEL[st]}</td></tr>`;
+            parcelasHtml+=`<tr><td>${inst.num}/${nOrig}</td><td>${fmtDate(inst.date)}</td><td>R$ ${iv.toFixed(2)}</td><td style="background:${ST_BG[st]};color:${ST_COLOR[st]};font-weight:700;text-align:center">${ST_LABEL[st]}</td></tr>`;
           });
+          if(filtExtra.length){
+            parcelasHtml+=`<tr><td colspan="4" style="background:#fff3e0;border-top:2px solid #f97316;border-bottom:1px solid #fde68a;padding:6px 14px"><span style="color:#9a3412;font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:.06em">📅 Meses Extras — Fora do Acordo Original</span></td></tr>`;
+            filtExtra.forEach(inst=>{
+              const iv=inst.valor||0;
+              const st=getInstStatus(d,inst.num)||(inst.date<today()?'atrasado':'pendente');
+              parcelasHtml+=`<tr style="background:#fffbf0"><td style="color:#9a3412;font-style:italic">Mês Extra</td><td>${fmtDate(inst.date)}</td><td>R$ ${iv.toFixed(2)}</td><td style="background:${ST_BG[st]};color:${ST_COLOR[st]};font-weight:700;text-align:center">${ST_LABEL[st]}</td></tr>`;
+            });
+          }
         } else {
-          // resumo: apenas totais por status
-          const pg=filtered.filter(i=>getInstStatus(d,i.num)==='pago').length;
-          const at=filtered.filter(i=>{const s=getInstStatus(d,i.num)||(i.date<today()?'atrasado':'pendente');return s==='atrasado';}).length;
-          const sj=filtered.filter(i=>getInstStatus(d,i.num)==='sojuros').length;
-          const pe=filtered.length-pg-at-sj;
-          const totalVal=filtered.reduce((s,inst)=>s+getInstValor(d,inst),0);
+          // resumo: parcelas originais
+          const pg=filtOrig.filter(i=>getInstStatus(d,i.num)==='pago').length;
+          const at=filtOrig.filter(i=>{const s=getInstStatus(d,i.num)||(i.date<today()?'atrasado':'pendente');return s==='atrasado';}).length;
+          const sj=filtOrig.filter(i=>getInstStatus(d,i.num)==='sojuros').length;
+          const pe=filtOrig.length-pg-at-sj;
+          const totalVal=filtOrig.reduce((s,inst)=>s+getInstValor(d,inst),0);
           parcelasHtml=`<tr><td colspan="2"><strong>Resumo do período</strong></td><td><strong>R$ ${totalVal.toFixed(2)}</strong></td><td style="text-align:center">${pg>0?`<span style="display:inline-block;margin:2px;padding:2px 6px;border-radius:4px;background:${ST_BG.pago};color:${ST_COLOR.pago};font-size:11px;font-weight:700">${pg} pago</span>`:''}${at>0?`<span style="display:inline-block;margin:2px;padding:2px 6px;border-radius:4px;background:${ST_BG.atrasado};color:${ST_COLOR.atrasado};font-size:11px;font-weight:700">${at} atrasado</span>`:''}${sj>0?`<span style="display:inline-block;margin:2px;padding:2px 6px;border-radius:4px;background:${ST_BG.sojuros};color:${ST_COLOR.sojuros};font-size:11px;font-weight:700">${sj} só juros</span>`:''}${pe>0?`<span style="display:inline-block;margin:2px;padding:2px 6px;border-radius:4px;background:${ST_BG.pendente};color:${ST_COLOR.pendente};font-size:11px;font-weight:700">${pe} pendente</span>`:''}</td></tr>`;
+          if(filtExtra.length){
+            const pgE=filtExtra.filter(i=>getInstStatus(d,i.num)==='pago').length;
+            const totE=filtExtra.reduce((s,i)=>s+(i.valor||0),0);
+            parcelasHtml+=`<tr style="background:#fffbf0"><td colspan="2" style="color:#9a3412;font-weight:700;font-size:11px">📅 Meses Extras (${filtExtra.length})</td><td>R$ ${totE.toFixed(2)}</td><td style="text-align:center">${pgE>0?`<span style="display:inline-block;padding:2px 6px;border-radius:4px;background:${ST_BG.pago};color:${ST_COLOR.pago};font-size:11px;font-weight:700">${pgE} pago</span>`:'<span style="font-size:11px;color:#9a3412">— fora do acordo</span>'}</td></tr>`;
+          }
         }
       }
     } else {
@@ -2202,6 +2273,23 @@ function renderListaParcelas(tipo, clienteId){
   const mesesNomes = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
 
   html += `<div class="inst-list">`;
+
+  // Separar originais e extras
+  const originaisParcelas = parcelas.filter(p => !p.extra);
+  const extrasParcelas = parcelas.filter(p => p.extra);
+  const todasParaGrupar = originaisParcelas; // agrupar só originais por mês
+
+  // Agrupar parcelas originais por mês/ano
+  const porMes = {};
+  todasParaGrupar.forEach(p => {
+    const [ano,mes] = p.date.split('-');
+    const chave = `${ano}-${mes}`;
+    if(!porMes[chave]) porMes[chave] = [];
+    porMes[chave].push(p);
+  });
+
+  const mesesNomes = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+
   Object.keys(porMes).sort().forEach(chave => {
     const [ano,mes] = chave.split('-');
     const lista = porMes[chave];
@@ -2215,14 +2303,10 @@ function renderListaParcelas(tipo, clienteId){
 
     lista.forEach(p => {
       const st = p.status;
-      const isExtra = !!p.extra;
-      const nOrig = d.parcelasOriginais || d.parcelas;
+      const nOrig = d.parcelasOriginais || d.installments.filter(i=>!i.extra).length || d.parcelas;
       const stLabel = st==='pago'?'✅ PAGO':st==='sojuros'?'🟠 SÓ JUROS':st==='atrasado'?'🔴 NÃO PAGOU':'🟡 PENDENTE';
-      const cls = isExtra?'so-juros':(st==='pago'?'paid':st==='sojuros'?'so-juros':st==='atrasado'?'due':'future');
-      const parcelaLabel = isExtra
-        ? `📅 Mês Extra — ${fmtDate(p.date)} <span style="font-size:10px;background:rgba(251,146,60,.2);color:var(--orange);border:1px solid var(--orange-bdr);border-radius:4px;padding:1px 6px;margin-left:4px">FORA DO ACORDO</span>
-           <button onclick="excluirParcelaExtraLista('${d.id}',${p.num})" style="font-size:10px;padding:2px 9px;border-radius:5px;background:var(--red-bg);color:var(--red);border:1px solid var(--red-bdr);cursor:pointer;font-family:'Lato',sans-serif;font-weight:700;margin-left:4px;display:inline-flex;align-items:center;gap:3px" title="Remover este mês extra">🗑 Remover</button>`
-        : d.tipo==='parcelado'?`Parcela ${p.num}/${nOrig}`:'Pagamento Único';
+      const cls = st==='pago'?'paid':st==='sojuros'?'so-juros':st==='atrasado'?'due':'future';
+      const parcelaLabel = d.tipo==='parcelado'?`Parcela ${p.num}/${nOrig}`:'Pagamento Único';
 
       const pValorDisplay = p.valorReal===0
         ? `<span style="display:inline-flex;align-items:center;gap:4px">
@@ -2232,7 +2316,7 @@ function renderListaParcelas(tipo, clienteId){
              <button onclick="salvarValorParcelaLista('${d.id}',${p.num},document.getElementById('lvp_${p.num}'))" style="font-size:10px;padding:3px 7px;border-radius:5px;background:rgba(52,211,153,.15);color:var(--green);border:1px solid var(--green-bdr);cursor:pointer;font-family:'Lato',sans-serif;font-weight:700">✔ OK</button>
            </span>`
         : `<span class="mono" style="font-size:13px;font-weight:600">${fmtBRL(p.valorReal)}</span>
-           <button onclick="const el=document.getElementById('lvpe_${p.num}');el.style.display=el.style.display==='none'?'inline-flex':'none'" style="font-size:10px;padding:2px 6px;border-radius:4px;background:rgba(255,255,255,.06);color:var(--muted);border:1px solid var(--border);cursor:pointer" title="Editar valor">✏️</button>
+           <button onclick="const el=document.getElementById('lvpe_${p.num}');el.style.display=el.style.display==='none'?'inline-flex':'none'" style="font-size:10px;padding:2px 6px;border-radius:4px;background:rgba(255,255,255,.06);color:var(--muted);border:1px solid var(--border);cursor:pointer">✏️</button>
            <span id="lvpe_${p.num}" style="display:none;align-items:center;gap:4px">
              <input type="number" value="${p.valorReal}" min="0" step="0.01" id="lvpei_${p.num}"
                style="width:90px;padding:3px 7px;font-size:12px;font-family:'IBM Plex Mono',monospace;background:#0f1729;border:1px solid rgba(96,165,250,.4);color:var(--accent);border-radius:6px;text-align:right"
@@ -2240,23 +2324,20 @@ function renderListaParcelas(tipo, clienteId){
              <button onclick="salvarValorParcelaLista('${d.id}',${p.num},document.getElementById('lvpei_${p.num}'))" style="font-size:10px;padding:3px 7px;border-radius:5px;background:rgba(52,211,153,.15);color:var(--green);border:1px solid var(--green-bdr);cursor:pointer;font-family:'Lato',sans-serif;font-weight:700">✔ OK</button>
            </span>`;
 
-      html += `<div class="inst-item ${cls}" style="${isExtra?'border-style:dashed':''}">
+      html += `<div class="inst-item ${cls}">
         <div style="flex:1">
           <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:4px;flex-wrap:wrap">
-            <span style="font-weight:700;font-size:13px">${isExtra?parcelaLabel:`${parcelaLabel} — ${fmtDate(p.date)}`}</span>
+            <span style="font-weight:700;font-size:13px">${parcelaLabel} — ${fmtDate(p.date)}</span>
             <span style="display:inline-flex;align-items:center;gap:6px">${pValorDisplay}</span>
           </div>
-          ${isExtra?'':`<div style="font-size:11px;font-weight:700;margin-bottom:6px;color:${st==='pago'?'var(--green)':st==='sojuros'?'var(--orange)':st==='atrasado'?'var(--red)':'var(--yellow)'}">${stLabel}</div>`}
+          <div style="font-size:11px;font-weight:700;margin-bottom:6px;color:${st==='pago'?'var(--green)':st==='sojuros'?'var(--orange)':st==='atrasado'?'var(--red)':'var(--yellow)'}">${stLabel}</div>
           <div class="inst-status-btns">`;
 
       if(d.tipo==='parcelado'){
-        html += `<button class="inst-status-btn isb-pago ${st==='pago'?'active-btn':''}" onclick="marcarParcelaLista('${d.id}',${p.num},'pago')">✅ PAGO/PG</button>`;
-        if(!isExtra){
-          html += `<button class="inst-status-btn isb-pendente ${st==='pendente'?'active-btn':''}" onclick="marcarParcelaLista('${d.id}',${p.num},'pendente')">🟡 PENDENTE</button>
-                   <button class="inst-status-btn isb-sojuros ${st==='sojuros'?'active-btn':''}" onclick="marcarParcelaLista('${d.id}',${p.num},'sojuros')">🟠 SÓ JUROS</button>
-                   <button class="inst-status-btn isb-naopagou ${st==='atrasado'?'active-btn':''}" onclick="marcarParcelaLista('${d.id}',${p.num},'atrasado')">🔴 NÃO PAGOU</button>
-                   ${st==='sojuros'?`<button class="inst-status-btn" style="background:rgba(96,165,250,.15);color:var(--accent);border:1px solid rgba(96,165,250,.4);margin-left:4px" onclick="prorrogarMesLista('${d.id}',${p.num})">📅 +1 MÊS</button>`:''}`;
-        }
+        html += `<button class="inst-status-btn isb-pago ${st==='pago'?'active-btn':''}" onclick="marcarParcelaLista('${d.id}',${p.num},'pago')">✅ PAGO/PG</button>
+                 <button class="inst-status-btn isb-pendente ${st==='pendente'?'active-btn':''}" onclick="marcarParcelaLista('${d.id}',${p.num},'pendente')">🟡 PENDENTE</button>
+                 <button class="inst-status-btn isb-sojuros ${st==='sojuros'?'active-btn':''}" onclick="marcarParcelaLista('${d.id}',${p.num},'sojuros')">🟠 SÓ JUROS</button>
+                 <button class="inst-status-btn isb-naopagou ${st==='atrasado'?'active-btn':''}" onclick="marcarParcelaLista('${d.id}',${p.num},'atrasado')">🔴 NÃO PAGOU</button>`;
       } else {
         html += `<button class="inst-status-btn isb-pago ${st==='pago'?'active-btn':''}" onclick="marcarUnicoLista('${d.id}','pago')">✅ PAGO/PG</button>
                  <button class="inst-status-btn isb-pendente ${st==='pendente'?'active-btn':''}" onclick="marcarUnicoLista('${d.id}','pendente')">🟡 PENDENTE</button>
@@ -2264,11 +2345,58 @@ function renderListaParcelas(tipo, clienteId){
       }
       html += `</div></div></div>`;
     });
-
     html += `</div>`;
   });
 
-  html += `</div>`;
+  // Seção de meses extras
+  if(extrasParcelas.length){
+    html += `<div style="margin-top:16px">
+      <div style="padding:10px 14px;background:rgba(251,146,60,.08);border:1px dashed var(--orange-bdr);border-radius:var(--r-sm);display:flex;align-items:center;gap:8px;margin-bottom:10px">
+        <span style="font-size:18px">📅</span>
+        <div>
+          <div style="font-size:11px;font-weight:700;color:var(--orange);text-transform:uppercase;letter-spacing:.06em">Meses Extras — Fora do Acordo</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:1px">Pagamentos extras que não fazem parte do acordo original</div>
+        </div>
+      </div>`;
+    extrasParcelas.sort((a,b)=>a.date.localeCompare(b.date)).forEach(p => {
+      const st = p.status;
+      const iv = p.valorReal || 0;
+      const pValorDisplay = iv===0
+        ? `<span style="font-size:11px;color:var(--muted)">Valor:</span>
+           <input type="number" id="lvp_${p.num}" value="0" min="0" step="0.01" placeholder="0,00"
+             style="width:90px;padding:3px 7px;font-size:12px;font-family:'IBM Plex Mono',monospace;background:#0f1729;border:1px solid rgba(96,165,250,.4);color:var(--accent);border-radius:6px;text-align:right"
+             onkeydown="if(event.key==='Enter')salvarValorParcelaLista('${d.id}',${p.num},this)">
+           <button onclick="salvarValorParcelaLista('${d.id}',${p.num},document.getElementById('lvp_${p.num}'))" style="font-size:10px;padding:3px 7px;border-radius:5px;background:rgba(52,211,153,.15);color:var(--green);border:1px solid var(--green-bdr);cursor:pointer;font-family:'Lato',sans-serif;font-weight:700">✔ OK</button>`
+        : `<span style="font-size:11px;color:var(--muted)">Valor:</span>
+           <span class="mono" style="font-size:13px;font-weight:600">${fmtBRL(iv)}</span>
+           <button onclick="const el=document.getElementById('lvpe_${p.num}');el.style.display=el.style.display==='none'?'inline-flex':'none'" style="font-size:10px;padding:2px 6px;border-radius:4px;background:rgba(255,255,255,.06);color:var(--muted);border:1px solid var(--border);cursor:pointer">✏️</button>
+           <span id="lvpe_${p.num}" style="display:none;align-items:center;gap:4px">
+             <input type="number" value="${iv}" min="0" step="0.01" id="lvpei_${p.num}"
+               style="width:90px;padding:3px 7px;font-size:12px;font-family:'IBM Plex Mono',monospace;background:#0f1729;border:1px solid rgba(96,165,250,.4);color:var(--accent);border-radius:6px;text-align:right"
+               onkeydown="if(event.key==='Enter')salvarValorParcelaLista('${d.id}',${p.num},this)">
+             <button onclick="salvarValorParcelaLista('${d.id}',${p.num},document.getElementById('lvpei_${p.num}'))" style="font-size:10px;padding:3px 7px;border-radius:5px;background:rgba(52,211,153,.15);color:var(--green);border:1px solid var(--green-bdr);cursor:pointer;font-family:'Lato',sans-serif;font-weight:700">✔ OK</button>
+           </span>`;
+      html += `<div class="inst-item so-juros" style="border-style:dashed;margin-bottom:8px">
+        <div style="flex:1">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap">
+            <span style="font-weight:700;font-size:13px;color:var(--orange)">📅 Mês Extra</span>
+            <span style="font-size:11px;color:var(--muted)">Data:</span>
+            <input type="date" value="${p.date}"
+              style="padding:3px 8px;font-size:12px;background:#0f1729;border:1px solid rgba(251,146,60,.4);color:var(--orange);border-radius:6px;font-family:'IBM Plex Mono',monospace"
+              onchange="salvarDataParcelaExtraLista('${d.id}',${p.num},this.value)">
+            <button onclick="excluirParcelaExtraLista('${d.id}',${p.num})" style="font-size:10px;padding:3px 10px;border-radius:5px;background:var(--red-bg);color:var(--red);border:1px solid var(--red-bdr);cursor:pointer;font-family:'Lato',sans-serif;font-weight:700;margin-left:auto">🗑 Remover</button>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px">${pValorDisplay}</div>
+          <div class="inst-status-btns">
+            <button class="inst-status-btn isb-pago ${st==='pago'?'active-btn':''}" onclick="marcarParcelaLista('${d.id}',${p.num},'pago')">✅ PAGO</button>
+            <button class="inst-status-btn isb-pendente ${st==='pendente'?'active-btn':''}" onclick="marcarParcelaLista('${d.id}',${p.num},'pendente')">🟡 PENDENTE</button>
+            <button class="inst-status-btn isb-naopagou ${st==='atrasado'?'active-btn':''}" onclick="marcarParcelaLista('${d.id}',${p.num},'atrasado')">🔴 NÃO PAGOU</button>
+          </div>
+        </div>
+      </div>`;
+    });
+    html += `</div>`;
+  }
   document.getElementById('listaContent').innerHTML = html;
 }
 
