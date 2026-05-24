@@ -193,17 +193,7 @@ body::after{content:'';position:fixed;inset:0;background:url('https://images.uns
 .toolbar-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
 .toolbar-row+.toolbar-row{margin-top:10px;padding-top:10px;border-top:1px solid var(--border)}
 .toolbar-label{font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.07em;white-space:nowrap}
-input[type="text"],input[type="number"],input[type="date"],select,textarea{font-family:'Lato',sans-serif;font-size:13px;background:var(--input-bg);border:1px solid var(--input-border);color:var(--text);border-radius:var(--r-sm);padding:8px 12px;outline:none;width:100%;transition:all .25s cubic-bezier(.4,0,.2,1);-webkit-appearance:none;color-scheme:dark}
-[data-theme="light"] input[type="text"],[data-theme="light"] input[type="number"],[data-theme="light"] input[type="date"],[data-theme="light"] select,[data-theme="light"] textarea{color-scheme:light}
-input[type="date"]::-webkit-calendar-picker-indicator{filter:invert(1) brightness(0.8);cursor:pointer;opacity:.7;transition:opacity .2s}
-input[type="date"]::-webkit-calendar-picker-indicator:hover{opacity:1}
-[data-theme="light"] input[type="date"]::-webkit-calendar-picker-indicator{filter:none;opacity:.6}
-[data-theme="light"] input[type="date"]::-webkit-calendar-picker-indicator:hover{opacity:1}
-input[type="date"]::-webkit-datetime-edit{color:var(--text)}
-input[type="date"]::-webkit-datetime-edit-fields-wrapper{color:var(--text)}
-input[type="date"]::-webkit-datetime-edit-text{color:var(--muted)}
-input[type="date"]::-webkit-datetime-edit-month-field,input[type="date"]::-webkit-datetime-edit-day-field,input[type="date"]::-webkit-datetime-edit-year-field{color:var(--text)}
-input[type="date"]::-webkit-datetime-edit-month-field:focus,input[type="date"]::-webkit-datetime-edit-day-field:focus,input[type="date"]::-webkit-datetime-edit-year-field:focus{background:var(--accent);color:#fff;border-radius:2px}
+input[type="text"],input[type="number"],input[type="date"],select,textarea{font-family:'Lato',sans-serif;font-size:13px;background:var(--input-bg);border:1px solid var(--input-border);color:var(--text);border-radius:var(--r-sm);padding:8px 12px;outline:none;width:100%;transition:all .25s cubic-bezier(.4,0,.2,1);-webkit-appearance:none}
 input:focus,select:focus,textarea:focus{background:var(--card);border-color:var(--accent);box-shadow:0 0 0 3px rgba(96,165,250,.2),0 0 20px rgba(96,165,250,.1)}
 select option{background:var(--card);color:var(--text)}
 .search-wrap{position:relative;flex:1;min-width:180px}
@@ -526,17 +516,6 @@ tbody tr:hover .name-initial{transform:scale(1.15);box-shadow:0 4px 20px rgba(96
 .back-btn{display:inline-flex;align-items:center;gap:6px;background:var(--btn-ghost-bg);border:1px solid var(--btn-ghost-border);color:var(--muted2);padding:6px 12px;border-radius:var(--r-sm);cursor:pointer;font-size:12px;font-weight:700;transition:all .2s;margin-bottom:12px}
 .back-btn:hover{background:var(--card);color:var(--text);border-color:var(--accent)}
 .lista-cliente-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px}
-
-/* ---- EXTRAS (Só Juros extra-acordo) ---- */
-.extras-section{margin-top:14px;border-top:2px dashed var(--orange-bdr);padding-top:12px;}
-.extras-section-title{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;flex-wrap:wrap;gap:6px;}
-.extras-section-label{font-size:11px;font-weight:700;color:var(--orange);text-transform:uppercase;letter-spacing:.08em;display:flex;align-items:center;gap:5px;}
-.extra-item{display:flex;justify-content:space-between;align-items:flex-start;padding:10px 13px;border-radius:var(--r-sm);border:1px dashed var(--orange-bdr);background:var(--orange-bg);margin-bottom:7px;transition:all .2s;}
-.extra-item:hover{border-color:var(--orange);transform:translateX(3px);}
-.extra-item-left{flex:1;}
-.extra-val-input{font-family:'IBM Plex Mono',monospace;font-size:13px;background:rgba(251,146,60,.12);border:1px solid var(--orange-bdr);color:var(--orange);border-radius:5px;padding:3px 8px;width:110px;text-align:right;outline:none;}
-.extra-val-input:focus{border-color:var(--orange);box-shadow:0 0 0 2px rgba(251,146,60,.2);}
-
 </style>
 </head>
 <body>
@@ -580,6 +559,7 @@ tbody tr:hover .name-initial{transform:scale(1.15);box-shadow:0 4px 20px rgba(96
     <span id="syncStatus" style="font-size:10px;font-weight:600;color:var(--muted);letter-spacing:.03em;margin-left:4px"></span>
   </div>
   <div class="header-right">
+    <button class="btn btn-ghost btn-sm" onclick="openJurosConfig()">⚙️ Juros</button>
     <button class="btn btn-ghost btn-sm" onclick="openCalModal()">📅 Calendário</button>
     <button class="btn btn-excel btn-sm" onclick="openExcelModal()">📊 Excel</button>
     <button class="btn btn-ghost btn-sm" onclick="toggleTheme()" id="themeBtn" title="Alternar tema">🌙</button>
@@ -673,23 +653,18 @@ tbody tr:hover .name-initial{transform:scale(1.15);box-shadow:0 4px 20px rgba(96
         <input type="number" id="f_parcelas" placeholder="Ex: 4" min="2" max="120" oninput="calcParcela()">
         <div id="valorParcelaInfo" class="form-hint"></div>
       </div>
-      <div class="form-group full" id="valorIgualField" style="display:none">
-        <label>Valor de Cada Parcela (R$) *</label>
-        <input type="number" id="f_valorParcela" placeholder="Ex: 500,00" step="0.01" min="0.01" oninput="calcParcela()">
-        <div id="valorIgualInfo" class="form-hint"></div>
-      </div>
       <div class="form-group full" id="modoParcelamentoField" style="display:none">
         <label>Tipo de Parcelas</label>
         <div class="modo-grid">
           <div class="tipo-opt selected" id="opt_modo_igual" onclick="selectModoParcelamento('igual')">
             <span style="font-size:17px">⚖️</span>
-            <span class="tipo-label">Mesmo Valor</span>
-            <span class="tipo-desc">Você define o valor de cada parcela</span>
+            <span class="tipo-label">Parcelas Iguais</span>
+            <span class="tipo-desc">Mesmo valor em todas</span>
           </div>
           <div class="tipo-opt" id="opt_modo_custom" onclick="selectModoParcelamento('personalizado')">
             <span style="font-size:17px">✍️</span>
-            <span class="tipo-label">Valores Diferentes</span>
-            <span class="tipo-desc">Cada parcela com valor próprio</span>
+            <span class="tipo-label">Valores Personalizados</span>
+            <span class="tipo-desc">Acordo — cada parcela diferente</span>
           </div>
         </div>
       </div>
@@ -700,6 +675,18 @@ tbody tr:hover .name-initial{transform:scale(1.15);box-shadow:0 4px 20px rgba(96
           <div class="custom-total-bar">
             <span id="customTotalInfo" style="color:var(--muted2);font-size:12px"></span>
           </div>
+        </div>
+      </div>
+      <div class="form-group full" id="jurosField" style="display:none">
+        <label>Aplicar Juros?</label>
+        <div style="display:flex;gap:8px;margin-top:4px">
+          <div class="tipo-opt" id="opt_juros_sim" onclick="selectJuros(true)" style="flex:1;flex-direction:row;gap:8px;justify-content:flex-start;padding:9px 12px"><span>💰</span><span class="tipo-label">Sim, com juros</span></div>
+          <div class="tipo-opt selected" id="opt_juros_nao" onclick="selectJuros(false)" style="flex:1;flex-direction:row;gap:8px;justify-content:flex-start;padding:9px 12px"><span>🚫</span><span class="tipo-label">Sem juros</span></div>
+        </div>
+        <div id="jurosRateField" style="display:none;margin-top:8px">
+          <label style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase">Taxa de Juros (%)</label>
+          <input type="number" id="f_taxaJuros" placeholder="Ex: 20" step="0.1" min="0" style="margin-top:4px">
+          <div class="form-hint" id="jurosValorInfo"></div>
         </div>
       </div>
       <div class="form-divider"></div>
@@ -800,6 +787,23 @@ tbody tr:hover .name-initial{transform:scale(1.15);box-shadow:0 4px 20px rgba(96
 </div>
 
 <!-- MODAL: CONFIG JUROS -->
+<div class="overlay" id="jurosModal">
+  <div class="modal" style="max-width:400px">
+    <div class="modal-header">
+      <div><div class="modal-title">⚙️ Juros Padrão</div><div class="modal-subtitle">Taxa sugerida para novos clientes</div></div>
+      <button class="close-btn" onclick="closeModal('jurosModal')">✕</button>
+    </div>
+    <div class="form-group" style="margin-bottom:1rem">
+      <label>Taxa de Juros Padrão (%)</label>
+      <input type="number" id="cfgJuros" step="0.1" min="0" placeholder="Ex: 20">
+      <div class="form-hint">💡 A opção "Só Juros" estará disponível para todas as parcelas, independente de ativar os juros aqui. Ativar os juros apenas calcula o valor automaticamente.</div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('jurosModal')">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveJurosConfig()">💾 Salvar</button>
+    </div>
+  </div>
+</div>
 
 
 
@@ -837,7 +841,7 @@ try {
   if (old && debtors.length===0) { debtors=JSON.parse(old); debtors.forEach(d=>{if(!d.installmentLog)d.installmentLog={};}); }
 } catch(e) {}
 
-let editingId=null, tipoSelecionado='unico', formaSelecionada='dinheiro', modoParcelamento='igual';
+let editingId=null, tipoSelecionado='unico', formaSelecionada='dinheiro', jurosAplicado=false, modoParcelamento='igual';
 let azFiltro='', clientCalId=null, clientCalYear=new Date().getFullYear(), calYear=new Date().getFullYear();
 let exportClienteMode='todos', exportPeriodoMode='todos';
 let _isSyncing = false;
@@ -1172,7 +1176,8 @@ function renderTable(){
     else pc='<span class="muted-sm">Único</span>';
     const sb=st==='pago'?`<span class="badge badge-green">🟢 Pago</span>`:st==='atrasado'?`<span class="badge badge-red">🔴 Não Pagou</span>`:st==='sojuros'?`<span class="badge badge-orange">🟠 Só Juros</span>`:`<span class="badge badge-yellow">🟡 Pendente</span>`;
     const tb2=d.tipo==='parcelado'?(d.modoParcelamento==='personalizado'?`<span class="badge badge-blue">📆 ${d.parcelas}x ✍️ Personalizado</span>`:`<span class="badge badge-blue">📆 ${d.parcelas}x de ${fmtBRL(d.valor/d.parcelas)}</span>`):`<span class="badge badge-gray">💵 Único</span>`;
-    return `<tr class="${rc}" style="animation-delay:${idx*.03}s"><td data-label="Cliente"><div class="name-row"><div class="name-initial">${fc}</div><div><div class="name-cell">${d.nome}</div>${d.obs?`<div class="muted-sm">📝 ${d.obs}</div>`:''}</div></div></td><td data-label="Próx. Venc.">${dc}</td><td data-label="Valor Emp." class="mono">${fmtBRL(d.valor)}</td><td data-label="Parcelas"><div style="display:flex;flex-direction:column;gap:3px">${tb2}</div></td><td data-label="Progresso">${pc}</td><td data-label="Saldo" class="mono" style="color:${saldo===0?'var(--green)':'var(--red)'}">${fmtBRL(saldo)}</td><td data-label="Status">${sb}</td><td data-label="Ações"><div style="display:flex;gap:3px;flex-wrap:wrap"><button class="btn btn-sm btn-success" onclick="openDetail('${d.id}')">👁 Ver</button><button class="btn btn-sm" style="background:rgba(99,102,241,.12);color:#818cf8;border:1px solid rgba(99,102,241,.3)" onclick="openClientCalendar('${d.id}')">📅</button><button class="btn btn-sm btn-ghost" onclick="editDebtor('${d.id}')">✏</button><button class="btn btn-sm btn-danger" onclick="deleteDebtor('${d.id}')">🗑</button></div></td></tr>`;
+    const jb=d.temJuros?`<span class="juros-badge">📈 ${d.taxaJuros}%</span>`:'';
+    return `<tr class="${rc}" style="animation-delay:${idx*.03}s"><td data-label="Cliente"><div class="name-row"><div class="name-initial">${fc}</div><div><div class="name-cell">${d.nome}</div>${d.obs?`<div class="muted-sm">📝 ${d.obs}</div>`:''}</div></div></td><td data-label="Próx. Venc.">${dc}</td><td data-label="Valor Emp." class="mono">${fmtBRL(d.valor)}</td><td data-label="Parcelas"><div style="display:flex;flex-direction:column;gap:3px">${tb2}${jb}</div></td><td data-label="Progresso">${pc}</td><td data-label="Saldo" class="mono" style="color:${saldo===0?'var(--green)':'var(--red)'}">${fmtBRL(saldo)}</td><td data-label="Status">${sb}</td><td data-label="Ações"><div style="display:flex;gap:3px;flex-wrap:wrap"><button class="btn btn-sm btn-success" onclick="openDetail('${d.id}')">👁 Ver</button><button class="btn btn-sm" style="background:rgba(99,102,241,.12);color:#818cf8;border:1px solid rgba(99,102,241,.3)" onclick="openClientCalendar('${d.id}')">📅</button><button class="btn btn-sm btn-ghost" onclick="editDebtor('${d.id}')">✏</button><button class="btn btn-sm btn-danger" onclick="deleteDebtor('${d.id}')">🗑</button></div></td></tr>`;
   }).join('');
   renderStats();buildDateDropdowns();buildAZIndex();
 }
@@ -1189,9 +1194,10 @@ function openAddModal(prefill){
   document.getElementById('f_dataInicio').value=prefill?.dataInicio||today();
   document.getElementById('f_parcelas').value=prefill?.parcelas||'';
   document.getElementById('f_obs').value=prefill?.obs||'';
+  document.getElementById('f_taxaJuros').value=config.taxaJurosDefault;
   document.getElementById('valorParcelaInfo').textContent='';
   modoParcelamento='igual';
-  selectTipo(prefill?.tipo||'unico'); selectForma('dinheiro');
+  selectTipo(prefill?.tipo||'unico'); selectForma('dinheiro'); selectJuros(false);
   if(prefill?.parcelas&&prefill.parcelas>1){selectTipo('parcelado');}
   openModal('addModal');
   setTimeout(()=>document.getElementById('f_nome').focus(),100);
@@ -1205,15 +1211,11 @@ function editDebtor(id){
   document.getElementById('f_valor').value=d.valor;
   document.getElementById('f_dataInicio').value=d.dataInicio;
   document.getElementById('f_obs').value=d.obs||'';
-
+  document.getElementById('f_taxaJuros').value=d.taxaJuros||config.taxaJurosDefault;
   modoParcelamento=d.modoParcelamento||'igual';
   selectTipo(d.tipo);
   if(d.tipo==='parcelado'){
-    document.getElementById('f_parcelas').value=d.parcelas;
-    if((d.modoParcelamento||'igual')==='igual'&&d.installments&&d.installments.length>0){
-      document.getElementById('f_valorParcela').value=d.installments[0].valor||'';
-    }
-    calcParcela();
+    document.getElementById('f_parcelas').value=d.parcelas; calcParcela();
     selectModoParcelamento(d.modoParcelamento||'igual');
     if(d.modoParcelamento==='personalizado'&&d.installments){
       setTimeout(()=>{
@@ -1224,7 +1226,7 @@ function editDebtor(id){
       },60);
     }
   }
-  selectForma(d.forma||'dinheiro');
+  selectForma(d.forma||'dinheiro'); selectJuros(d.temJuros||false);
   openModal('addModal');
 }
 function selectTipo(t){
@@ -1232,40 +1234,36 @@ function selectTipo(t){
   document.getElementById('opt_unico').classList.toggle('selected',t==='unico');
   document.getElementById('opt_parcelado').classList.toggle('selected',t==='parcelado');
   document.getElementById('parcelasField').style.display=t==='parcelado'?'block':'none';
+  document.getElementById('jurosField').style.display=t==='parcelado'?'block':'none';
   document.getElementById('modoParcelamentoField').style.display=t==='parcelado'?'block':'none';
-  document.getElementById('valorIgualField').style.display=(t==='parcelado'&&modoParcelamento==='igual')?'block':'none';
-  if(t!=='parcelado'){modoParcelamento='igual';document.getElementById('customInstFields').style.display='none';document.getElementById('valorIgualField').style.display='none';}
+  if(t!=='parcelado'){modoParcelamento='igual';document.getElementById('customInstFields').style.display='none';}
 }
 function selectForma(f){ formaSelecionada=f; document.querySelectorAll('#formaGrid .forma-opt').forEach(el=>el.classList.toggle('selected',el.dataset.forma===f)); }
-
+function selectJuros(v){
+  jurosAplicado=v;
+  document.getElementById('opt_juros_sim').classList.toggle('selected',v);
+  document.getElementById('opt_juros_nao').classList.toggle('selected',!v);
+  document.getElementById('jurosRateField').style.display=v?'block':'none';
+  calcParcela();
+}
 function calcParcela(){
-  const val=parseFloat(document.getElementById('f_valor').value)||0;
-  const n=parseInt(document.getElementById('f_parcelas').value)||0;
-  const vp=parseFloat(document.getElementById('f_valorParcela')?.value)||0;
-  const info=document.getElementById('valorParcelaInfo');
-  const vi=document.getElementById('valorIgualInfo');
+  const val=parseFloat(document.getElementById('f_valor').value)||0,n=parseInt(document.getElementById('f_parcelas').value)||0,taxa=parseFloat(document.getElementById('f_taxaJuros').value)||0;
+  const info=document.getElementById('valorParcelaInfo'),ji=document.getElementById('jurosValorInfo');
   if(val&&n>0){
     if(modoParcelamento==='personalizado'){
-      if(info)info.textContent=`→ ${n} parcelas com valores personalizados`;
-      document.getElementById('valorIgualField').style.display='none';
+      info.textContent=`→ ${n} parcelas com valores personalizados`;
       buildCustomInstFields();
     } else {
-      if(info)info.textContent='';
-      document.getElementById('valorIgualField').style.display='block';
-      if(vp>0&&vi){const total=vp*n;vi.textContent=`→ Total combinado: ${fmtBRL(total)}`;}
-      else if(vi)vi.textContent='';
+      info.textContent=`→ ${n}x de ${fmtBRL(val/n)} (Total: ${fmtBRL(val)})`;
     }
-  } else {
-    if(info)info.textContent='';
-    if(vi)vi.textContent='';
-  }
+    if(jurosAplicado&&taxa>0&&ji)ji.textContent=`SÓ JUROS = ${fmtBRL((val/n)*(taxa/100))}/mês`;
+  } else {info.textContent='';if(ji)ji.textContent='';}
 }
 function selectModoParcelamento(modo){
   modoParcelamento=modo;
   document.getElementById('opt_modo_igual').classList.toggle('selected',modo==='igual');
   document.getElementById('opt_modo_custom').classList.toggle('selected',modo==='personalizado');
   document.getElementById('customInstFields').style.display=modo==='personalizado'?'block':'none';
-  document.getElementById('valorIgualField').style.display=modo==='igual'?'block':'none';
   if(modo==='personalizado')buildCustomInstFields();
   calcParcela();
 }
@@ -1298,19 +1296,18 @@ function updateCustomTotal(){
   }
 }
 function saveDebtor(){
-  const nome=document.getElementById('f_nome').value.trim(),valor=parseFloat(document.getElementById('f_valor').value),dataInicio=document.getElementById('f_dataInicio').value,obs=document.getElementById('f_obs').value.trim();
+  const nome=document.getElementById('f_nome').value.trim(),valor=parseFloat(document.getElementById('f_valor').value),dataInicio=document.getElementById('f_dataInicio').value,obs=document.getElementById('f_obs').value.trim(),taxa=parseFloat(document.getElementById('f_taxaJuros').value)||0;
   if(!nome){showToast('⚠ Informe o nome!','red');return;} if(!valor||valor<=0){showToast('⚠ Valor inválido!','red');return;} if(!dataInicio){showToast('⚠ Informe a data!','red');return;}
-  const base={nome,valor,dataInicio,obs,forma:formaSelecionada,tipo:tipoSelecionado,temJuros:false,taxaJuros:0};
+  const base={nome,valor,dataInicio,obs,forma:formaSelecionada,tipo:tipoSelecionado,temJuros:jurosAplicado&&tipoSelecionado==='parcelado',taxaJuros:taxa};
   if(tipoSelecionado==='parcelado'){
     const n=parseInt(document.getElementById('f_parcelas').value); if(!n||n<2){showToast('⚠ Mínimo 2 parcelas!','red');return;}
-    if(modoParcelamento==='igual'){const vp=parseFloat(document.getElementById('f_valorParcela').value);if(!vp||vp<=0){showToast('⚠ Informe o valor da parcela!','red');return;}}
     const valorTotal=valor;
     const buildInsts=(n,dataInicio,lg,oldInsts)=>Array.from({length:n},(_,i)=>{
       const num=i+1;let date,valorParcela;
       if(modoParcelamento==='personalizado'){
         const dEl=document.getElementById(`ci_date_${i}`),vEl=document.getElementById(`ci_val_${i}`);
         date=dEl?.value||addMonths(dataInicio,i); valorParcela=parseFloat(vEl?.value)||0;
-      } else { date=addMonths(dataInicio,i); const vpEl=document.getElementById('f_valorParcela'); valorParcela=vpEl?parseFloat(vpEl.value)||0:valorTotal/n; }
+      } else { date=addMonths(dataInicio,i); valorParcela=valorTotal/n; }
       const old=oldInsts?.find(x=>x.num===num);
       return {num,date,valor:valorParcela,pago:lg?lg[instKey(num)]==='pago':false,soJuros:lg?lg[instKey(num)]==='sojuros':false,paidAt:lg&&lg[instKey(num)]==='pago'?today():(old?.paidAt||null)};
     });
@@ -1332,16 +1329,17 @@ function deleteDebtor(id){
 // ══════════════════════════════════════════
 function openDetail(id){
   const d=debtors.find(x=>x.id===id); if(!d)return;
-  const st=getStatus(d),saldo=calcSaldo(d);
+  const st=getStatus(d),saldo=calcSaldo(d),jv=calcJurosValor(d);
   const sb=st==='pago'?`<span class="badge badge-green">🟢 Pago</span>`:st==='atrasado'?`<span class="badge badge-red">🔴 Não Pagou</span>`:st==='sojuros'?`<span class="badge badge-orange">🟠 Só Juros</span>`:`<span class="badge badge-yellow">🟡 Pendente</span>`;
   document.getElementById('detailName').textContent=d.nome;
-  document.getElementById('detailSub').innerHTML=`${sb} &nbsp; ${FORMA_LABEL[d.forma||'dinheiro']}`;
+  document.getElementById('detailSub').innerHTML=`${sb} &nbsp; ${FORMA_LABEL[d.forma||'dinheiro']}${d.temJuros?` &nbsp; <span class="juros-badge">📈 ${d.taxaJuros}% — SÓ JUROS: ${fmtBRL(jv)}</span>`:''}`;
   let html=`<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:1rem">
     <div class="stat-card blue" style="padding:.8rem"><div class="stat-label">Emprestado</div><div class="stat-value blue" style="font-size:.95rem">${fmtBRL(d.valor)}</div></div>
     <div class="stat-card ${saldo===0?'green':'red'}" style="padding:.8rem"><div class="stat-label">Saldo Devedor</div><div class="stat-value ${saldo===0?'green':'red'}" style="font-size:.95rem">${fmtBRL(saldo)}</div></div>
     <div class="stat-card" style="padding:.8rem;border-color:var(--border)"><div class="stat-label">Início</div><div style="font-family:'IBM Plex Mono',monospace;font-size:.9rem">${fmtDate(d.dataInicio)}</div></div>
   </div>`;
   if(d.obs)html+=`<div style="background:var(--surface);padding:9px 13px;border-radius:var(--r-sm);font-size:12px;color:var(--muted2);margin-bottom:10px;border:1px solid var(--border)">📝 ${d.obs}</div>`;
+  if(d.temJuros&&jv>0)html+=`<div class="info-box">🟠 <strong>SÓ JUROS = ${fmtBRL(jv)}/mês</strong> — NÃO abate a parcela. Use quando o cliente não tem o valor completo.</div>`;
   if(d.tipo==='parcelado'&&d.installments){
     html+=`<div class="inst-list">`;
     d.installments.forEach(inst=>{
@@ -1368,8 +1366,6 @@ function openDetail(id){
         <button class="inst-status-btn isb-naopagou ${st2==='atrasado'?'active-btn':''}" onclick="marcarUnico('${d.id}','atrasado')">🔴 NÃO PAGOU</button>
       </div></div><span class="mono" style="font-size:14px">${fmtBRL(d.valor)}</span></div>`;
   }
-  // ── SEÇÃO DE REGISTROS EXTRAS (Só Juros fora do acordo) ──
-  html += buildExtrasHTML(d);
   document.getElementById('detailContent').innerHTML=html;
   openModal('detailModal');
 }
@@ -1384,112 +1380,16 @@ function marcarUnico(id,st){
 }
 
 // ══════════════════════════════════════════
-//  EXTRAS — Registros de Só Juros fora do acordo
-// ══════════════════════════════════════════
-
-function getNextExtraDate(d){
-  // Pega a última data existente (installments ou extras) e adiciona 1 mês
-  let allDates=[];
-  if(d.installments) allDates=allDates.concat(d.installments.map(i=>i.date));
-  if(d.extrasLog)    allDates=allDates.concat(d.extrasLog.map(e=>e.date));
-  if(!allDates.length) return today();
-  const last=allDates.sort().slice(-1)[0];
-  return addMonths(last,1);
-}
-
-function buildExtrasHTML(d){
-  if(d.tipo!=='parcelado') return '';  // apenas para parcelados
-  const extras=d.extrasLog||[];
-  const stMap={pago:'✅ PAGO',pendente:'🟡 PENDENTE',sojuros:'🟠 SÓ JUROS',atrasado:'🔴 NÃO PAGOU'};
-  const stCls={pago:'isb-pago',pendente:'isb-pendente',sojuros:'isb-sojuros',atrasado:'isb-naopagou'};
-
-  let rows='';
-  extras.forEach((ex,i)=>{
-    const st=ex.status||'sojuros';
-    const stLabel=`<span style="color:${st==='pago'?'var(--green)':st==='sojuros'?'var(--orange)':st==='atrasado'?'var(--red)':'var(--yellow)'};font-weight:700;font-size:12px">${stMap[st]}</span>`;
-    rows+=`<div class="extra-item" id="extra_row_${ex.id}">
-      <div class="extra-item-left">
-        <div style="font-weight:700;font-size:12px;margin-bottom:4px;color:var(--orange)">
-          🟠 Registro Extra #${i+1} — ${fmtDate(ex.date)}
-        </div>
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap">
-          <span style="font-size:11px;color:var(--muted)">Valor:</span>
-          <input class="extra-val-input" type="number" step="0.01" min="0"
-            value="${ex.valor||0}" placeholder="0,00"
-            onchange="updateExtraValor('${d.id}','${ex.id}',this.value)"
-            title="Valor pago nesse registro">
-          ${stLabel}
-        </div>
-        <div class="inst-status-btns">
-          <button class="inst-status-btn isb-pago ${st==='pago'?'active-btn':''}" onclick="marcarExtra('${d.id}','${ex.id}','pago')">✅ PAGO</button>
-          <button class="inst-status-btn isb-pendente ${st==='pendente'?'active-btn':''}" onclick="marcarExtra('${d.id}','${ex.id}','pendente')">🟡 PENDENTE</button>
-          <button class="inst-status-btn isb-sojuros ${st==='sojuros'?'active-btn':''}" onclick="marcarExtra('${d.id}','${ex.id}','sojuros')">🟠 SÓ JUROS</button>
-          <button class="inst-status-btn isb-naopagou ${st==='atrasado'?'active-btn':''}" onclick="marcarExtra('${d.id}','${ex.id}','atrasado')">🔴 NÃO PAGOU</button>
-        </div>
-      </div>
-      <button class="btn btn-xs btn-danger" style="margin-left:8px;flex-shrink:0;align-self:flex-start;margin-top:2px"
-        onclick="removeExtra('${d.id}','${ex.id}')" title="Remover este registro">🗑</button>
-    </div>`;
-  });
-
-  const nextDate=getNextExtraDate(d);
-  return `<div class="extras-section">
-    <div class="extras-section-title">
-      <span class="extras-section-label">🟠 Registros Extras de Só Juros
-        ${extras.length?`<span style="background:var(--orange-bg);border:1px solid var(--orange-bdr);border-radius:10px;padding:1px 7px;font-size:10px">${extras.length}</span>`:''}
-      </span>
-      <button class="btn btn-orange btn-sm" onclick="addExtra('${d.id}','${nextDate}')">
-        ➕ Adicionar Próximo Mês <span style="opacity:.7;font-size:10px;margin-left:3px">${fmtDate(nextDate)}</span>
-      </button>
-    </div>
-    ${extras.length?rows:`<div style="font-size:12px;color:var(--muted);padding:8px 0">Nenhum registro extra. Use o botão acima para registrar um mês em que o cliente pagou apenas juros ou ficou sem pagar.</div>`}
-  </div>`;
-}
-
-function addExtra(id, date){
-  const idx=debtors.findIndex(x=>x.id===id); if(idx<0)return;
-  if(!debtors[idx].extrasLog) debtors[idx].extrasLog=[];
-  const newId='ex_'+Date.now().toString(36);
-  debtors[idx].extrasLog.push({id:newId, date:date||today(), valor:0, status:'sojuros', createdAt:today()});
-  save(); openDetail(id);
-  showToast('🟠 Registro extra adicionado!','orange');
-}
-
-function removeExtra(id, exId){
-  if(!confirm('Remover este registro extra?'))return;
-  const idx=debtors.findIndex(x=>x.id===id); if(idx<0)return;
-  debtors[idx].extrasLog=(debtors[idx].extrasLog||[]).filter(e=>e.id!==exId);
-  save(); openDetail(id);
-  showToast('🗑 Registro removido.','red');
-}
-
-function marcarExtra(id, exId, st){
-  const idx=debtors.findIndex(x=>x.id===id); if(idx<0)return;
-  const ex=(debtors[idx].extrasLog||[]).find(e=>e.id===exId); if(!ex)return;
-  ex.status=st;
-  save(); openDetail(id);
-  showToast({pago:'✅ PAGO',pendente:'🟡 PENDENTE',sojuros:'🟠 SÓ JUROS',atrasado:'🔴 NÃO PAGOU'}[st]||'Salvo!',st==='pago'?'green':st==='sojuros'?'orange':'blue');
-}
-
-function updateExtraValor(id, exId, val){
-  const idx=debtors.findIndex(x=>x.id===id); if(idx<0)return;
-  const ex=(debtors[idx].extrasLog||[]).find(e=>e.id===exId); if(!ex)return;
-  ex.valor=parseFloat(val)||0;
-  save();
-  showToast('💾 Valor atualizado!','green');
-}
-
-
-// ══════════════════════════════════════════
 //  CALENDÁRIO
 // ══════════════════════════════════════════
 function openClientCalendar(id){ clientCalId=id; clientCalYear=new Date().getFullYear(); document.getElementById('calModalTitle').textContent='📅 Calendário'; renderClientCal(); openModal('calModal'); }
 function renderClientCal(){
   const d=debtors.find(x=>x.id===clientCalId); if(!d)return;
-  const now=new Date();
+  const now=new Date(),jv=calcJurosValor(d);
   document.getElementById('calModalTitle').textContent=`📅 ${d.nome}`;
   document.getElementById('calModalSub').textContent=d.tipo==='parcelado'?(d.modoParcelamento==='personalizado'?`${d.parcelas}x (personalizado)`:`${d.parcelas}x de ${fmtBRL(d.valor/d.parcelas)}`):`Único: ${fmtBRL(d.valor)}`;
   let html=`<div class="pcal-year-nav"><button class="cal-nav-btn" onclick="clientCalYear--;renderClientCal()">‹</button><span class="pcal-year-label">${clientCalYear}</span><button class="cal-nav-btn" onclick="clientCalYear++;renderClientCal()">›</button></div>`;
+  if(d.temJuros&&jv>0)html+=`<div class="info-box" style="margin-bottom:10px">🟠 SÓ JUROS = <strong>${fmtBRL(jv)}/mês</strong></div>`;
   html+=`<div class="pcal-grid">`;
   for(let m=0;m<12;m++){
     const isCur=clientCalYear===now.getFullYear()&&m===now.getMonth();
@@ -1508,7 +1408,6 @@ function renderClientCal(){
   document.getElementById('calContent').innerHTML=html;
 }
 function marcarParcelaCal(id,n,st){const idx=debtors.findIndex(x=>x.id===id);setInstStatus(idx,n,st);save();renderTable();}
-function marcarExtraCal(id,exId,st){const idx=debtors.findIndex(x=>x.id===id);if(idx<0)return;const ex=(debtors[idx].extrasLog||[]).find(e=>e.id===exId);if(!ex)return;ex.status=st;save();renderTable();}
 function marcarUnicoCal(id,st){const idx=debtors.findIndex(x=>x.id===id);debtors[idx].statusManual=st;debtors[idx].pago=st==='pago';save();renderTable();}
 function openCalModal(){clientCalId=null;calYear=new Date().getFullYear();document.getElementById('calModalTitle').textContent='📅 Calendário Geral';document.getElementById('calModalSub').textContent='Visão consolidada por mês';renderGeneralCal();openModal('calModal');}
 function renderGeneralCal(){
@@ -1521,30 +1420,14 @@ function renderGeneralCal(){
       let val=0,iNum=null;
       if(d.tipo==='parcelado'&&d.installments){const i=d.installments.find(x=>{const dt=new Date(x.date+'T12:00:00');return dt.getFullYear()===calYear&&dt.getMonth()===m;});if(i){val=getInstValor(d,i);iNum=i.num;}}
       else{const dt=new Date(d.dataInicio+'T12:00:00');if(dt.getFullYear()===calYear&&dt.getMonth()===m)val=d.valor;}
-      if(val){mTot+=val;
-        const st=iNum?(getInstStatus(d,iNum)||(d.installments.find(x=>x.num===iNum)?.date<today()?'atrasado':'pendente')):getStatus(d);
-        if(st==='pago')mPg+=val;else if(st==='sojuros')mSJ+=val;else if(st==='atrasado')mAt+=val;else mPe+=val;
-        cli.push({d,st,val,iNum,isExtra:false});
-      }
-      // Extras do mês
-      (d.extrasLog||[]).forEach(ex=>{
-        const dt=new Date(ex.date+'T12:00:00');
-        if(dt.getFullYear()===calYear&&dt.getMonth()===m){
-          const exVal=ex.valor||0;
-          const exSt=ex.status||'sojuros';
-          if(exVal>0)mTot+=exVal;
-          if(exSt==='pago')mPg+=exVal;else if(exSt==='sojuros')mSJ+=exVal;else if(exSt==='atrasado')mAt+=exVal;else mPe+=exVal;
-          cli.push({d,st:exSt,val:exVal,iNum:null,isExtra:true,exId:ex.id});
-        }
-      });
+      if(!val)return; mTot+=val;
+      const st=iNum?(getInstStatus(d,iNum)||(d.installments.find(x=>x.num===iNum)?.date<today()?'atrasado':'pendente')):getStatus(d);
+      if(st==='pago')mPg+=val;else if(st==='sojuros')mSJ+=val;else if(st==='atrasado')mAt+=val;else mPe+=val;
+      cli.push({d,st,val,iNum});
     });
     html+=`<div style="margin-bottom:1.2rem"><div style="display:flex;align-items:center;gap:8px;margin-bottom:.5rem;flex-wrap:wrap"><span style="font-family:'Syne',sans-serif;font-weight:700;color:${isCur?'var(--accent)':'var(--text)'}">${MESES[m]}${isCur?' ◉':''}</span><span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--muted)">${fmtBRL(mTot)}</span>${mPg>0?`<span class="badge badge-green" style="font-size:10px">${fmtBRL(mPg)}</span>`:''}${mSJ>0?`<span class="badge badge-orange" style="font-size:10px">🟠 ${fmtBRL(mSJ)}</span>`:''}${mAt>0?`<span class="badge badge-red" style="font-size:10px">${fmtBRL(mAt)}</span>`:''}${mPe>0?`<span class="badge badge-yellow" style="font-size:10px">${fmtBRL(mPe)}</span>`:''}</div>`;
     if(!cli.length)html+=`<div style="font-size:12px;color:var(--muted);padding:6px;background:var(--surface);border-radius:6px">Nenhum vencimento.</div>`;
-    else{html+=`<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:7px">`;cli.forEach(({d,st,val,iNum,isExtra,exId})=>{
-  const mkF=(s)=>isExtra?`marcarExtraCal('${d.id}','${exId||''}','${s}');renderGeneralCal()`:iNum?`marcarParcelaCal('${d.id}',${iNum},'${s}');renderGeneralCal()`:`marcarUnicoCal('${d.id}','${s}');renderGeneralCal()`;
-  const extraTag=isExtra?`<span style="font-size:9px;background:var(--orange-bg);color:var(--orange);border:1px solid var(--orange-bdr);border-radius:3px;padding:1px 5px;margin-left:4px">EXTRA</span>`:'';
-  html+=`<div style="background:${isExtra?'var(--orange-bg)':'var(--surface)'};border:1px ${isExtra?'dashed':'solid'} ${isExtra?'var(--orange-bdr)':'var(--border)'};border-radius:7px;padding:9px"><div style="font-weight:700;font-size:12px;margin-bottom:3px">${d.nome}${extraTag}</div><div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--muted2);margin-bottom:5px">${fmtBRL(val)}</div><div style="display:flex;gap:3px"><button class="pcal-cycle-btn ${st==='pago'?'pago-active':''}" style="flex:1" onclick="${mkF('pago')}">✅</button><button class="pcal-cycle-btn ${st==='pendente'?'pendente-active':''}" style="flex:1" onclick="${mkF('pendente')}">⏳</button><button class="pcal-cycle-btn ${st==='sojuros'?'sojuros-active':''}" style="flex:1" onclick="${mkF('sojuros')}">🟠</button><button class="pcal-cycle-btn ${st==='atrasado'?'atrasado-active':''}" style="flex:1" onclick="${mkF('atrasado')}">❌</button></div></div>`;
-});html+=`</div>`;}
+    else{html+=`<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:7px">`;cli.forEach(({d,st,val,iNum})=>{const mkF=(s)=>iNum?`marcarParcelaCal('${d.id}',${iNum},'${s}');renderGeneralCal()`:`marcarUnicoCal('${d.id}','${s}');renderGeneralCal()`;html+=`<div style="background:var(--surface);border:1px solid var(--border);border-radius:7px;padding:9px"><div style="font-weight:700;font-size:12px;margin-bottom:3px">${d.nome}</div><div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--muted2);margin-bottom:5px">${fmtBRL(val)}</div><div style="display:flex;gap:3px"><button class="pcal-cycle-btn ${st==='pago'?'pago-active':''}" style="flex:1" onclick="${mkF('pago')}">✅</button><button class="pcal-cycle-btn ${st==='pendente'?'pendente-active':''}" style="flex:1" onclick="${mkF('pendente')}">⏳</button>${d.temJuros?`<button class="pcal-cycle-btn ${st==='sojuros'?'sojuros-active':''}" style="flex:1" onclick="${mkF('sojuros')}">🟠</button>`:''}<button class="pcal-cycle-btn ${st==='atrasado'?'atrasado-active':''}" style="flex:1" onclick="${mkF('atrasado')}">❌</button></div></div>`;});html+=`</div>`;}
     html+=`</div>`;if(m<11)html+=`<hr style="border:none;border-top:1px solid var(--border2);margin-bottom:1.2rem">`;
   }
   document.getElementById('calContent').innerHTML=html;
@@ -1592,7 +1475,8 @@ function renderExcelPreview(){
   const {list,fMes,fAno}=getExportData();
   let html='';
   list.forEach(d=>{
-        const saldo=calcSaldo(d);
+    const jv=calcJurosValor(d);
+    const saldo=calcSaldo(d);
     let rows=[];
     if(d.tipo==='parcelado'&&d.installments){
       rows=d.installments.filter(inst=>{if(!fMes)return true;const[y,mo]=inst.date.split('-');return mo===fMes&&y===fAno;});
@@ -1607,7 +1491,7 @@ function renderExcelPreview(){
         <div style="padding:8px 12px;border-right:1px solid #2a3050"><div style="font-size:10px;color:#6b7280;text-transform:uppercase;margin-bottom:2px">Emprestado</div><div style="font-weight:700;color:#60a5fa">R$ ${d.valor.toFixed(2)}</div></div>
         <div style="padding:8px 12px;border-right:1px solid #2a3050"><div style="font-size:10px;color:#6b7280;text-transform:uppercase;margin-bottom:2px">Data Início</div><div style="font-weight:600;color:#e2e8f0">${fmtDate(d.dataInicio)}</div></div>
         <div style="padding:8px 12px;border-right:1px solid #2a3050"><div style="font-size:10px;color:#6b7280;text-transform:uppercase;margin-bottom:2px">Saldo Devedor</div><div style="font-weight:700;color:${saldo===0?'#10b981':'#f43f5e'}">R$ ${saldo.toFixed(2)}</div></div>
-
+        <div style="padding:8px 12px"><div style="font-size:10px;color:#6b7280;text-transform:uppercase;margin-bottom:2px">Juros</div><div style="font-weight:600;color:#f97316">${d.temJuros?`${d.taxaJuros}% — R$ ${jv.toFixed(2)}/mês`:'Sem juros'}</div></div>
       </div>
       <table class="excel-preview-table" style="width:100%"><thead>
         <tr><th>Parcela</th><th>Data Venc.</th><th>Valor Combinado</th><th>Status (editável no Excel)</th></tr>
@@ -1618,12 +1502,6 @@ function renderExcelPreview(){
         const st=getInstStatus(d,inst.num)||(inst.date<today()?'atrasado':'pendente');
         html+=`<tr><td style="font-weight:700">${inst.num}/${d.parcelas}</td><td>${fmtDate(inst.date)}</td><td style="font-weight:700">R$ ${iv.toFixed(2)}</td><td class="${getStClass(st)}">${getStLabel(st)}</td></tr>`;
       });
-      // Extras do período
-      const extras=(d.extrasLog||[]).filter(ex=>{if(!fMes)return true;const[y,mo]=ex.date.split('-');return mo===fMes&&y===fAno;});
-      if(extras.length){
-        html+=`<tr style="background:rgba(251,146,60,.08)"><td colspan="4" style="font-size:10px;font-weight:700;color:#f97316;padding:6px 11px;letter-spacing:.06em">🟠 REGISTROS EXTRAS (Só Juros)</td></tr>`;
-        extras.forEach((ex,i)=>{const exSt=ex.status||'sojuros';html+=`<tr style="background:rgba(251,146,60,.06)"><td style="color:#f97316;font-weight:700">Extra ${i+1}</td><td>${fmtDate(ex.date)}</td><td>R$ ${(ex.valor||0).toFixed(2)}</td><td class="${getStClass(exSt)}">${getStLabel(exSt)}</td></tr>`;});
-      }
     } else {
       const st=getStatus(d);
       html+=`<tr><td style="font-weight:700">1/1</td><td>${fmtDate(d.dataInicio)}</td><td style="font-weight:700">R$ ${d.valor.toFixed(2)}</td><td class="${getStClass(st)}">${getStLabel(st)}</td></tr>`;
@@ -1665,7 +1543,8 @@ function exportExcel(){
       if(!fMes||d.dataInicio.startsWith(fAno+'-'+fMes)) insts=[{date:d.dataInicio,num:1,valor:d.valor}];
     }
     if(!insts.length)return;
-        const saldo=calcSaldo(d);
+    const jv=calcJurosValor(d);
+    const saldo=calcSaldo(d);
     const forma=FORMA_LABEL2[d.forma||'dinheiro']||d.forma||'—';
     const pgCount=d.tipo==='parcelado'&&d.installments?d.installments.filter(i=>getInstStatus(d,i.num)==='pago').length:0;
     const totalComb=insts.reduce((s,inst)=>s+getInstValor(d,inst),0);
@@ -1681,6 +1560,7 @@ function exportExcel(){
     if(d.tipo==='parcelado'){
       const modoStr=d.modoParcelamento==='personalizado'?'Personalizado (acordo)':'Parcelas iguais';
       aoa.push([`📦 Parcelas (${pgCount}/${d.parcelas} pagas)`, modoStr,'','','']);
+      if(d.temJuros)aoa.push(['📈 Taxa de Juros', `${d.taxaJuros}% — SÓ JUROS: R$ ${jv.toFixed(2)}/mês`,'','','']);
     }
     aoa.push(['💳 Saldo Devedor', Number(saldo.toFixed(2)),'','','']);
     if(d.obs)aoa.push(['📝 Observações', d.obs,'','','']);
@@ -1697,18 +1577,6 @@ function exportExcel(){
       const partLabel=d.tipo==='parcelado'?`${inst.num}/${d.parcelas}`:'1/1';
       aoa.push([partLabel, fmtDate(inst.date), Number(iv.toFixed(2)), stl,'']);
     });
-    // Extras
-    if(d.tipo==='parcelado'){
-      const extras=(d.extrasLog||[]).filter(ex=>{if(!fMes)return true;const[y,mo]=ex.date.split('-');return mo===fMes&&y===fAno;});
-      if(extras.length){
-        aoa.push(['','','','','']);
-        aoa.push(['🟠 REGISTROS EXTRAS (Só Juros)','','','','']);
-        extras.forEach((ex,i)=>{
-          const exSt=getStLabel(ex.status||'sojuros');
-          aoa.push([`Extra ${i+1}`, fmtDate(ex.date), Number((ex.valor||0).toFixed(2)), exSt, '']);
-        });
-      }
-    }
     // Empty + total
     aoa.push(['','','','','']);
     const totalRowIdx=aoa.length;
@@ -1842,7 +1710,7 @@ function renderReportPreview(){
   let html=`<div style="color:var(--text);font-size:12px">`;
   html+=`<div style="margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid var(--border)"><strong style="color:var(--accent)">Pré-visualização:</strong> ${list.length} cliente(s) · ${reportConteudo==='completo'?'Completo':'Resumo'} · ${reportEstilo==='colorido'?'Colorido':'Econômico'}</div>`;
   list.slice(0,5).forEach(d=>{
-    const saldo=calcSaldo(d),st=getStatus(d);
+    const jv=calcJurosValor(d),saldo=calcSaldo(d),st=getStatus(d);
     let parcelasCount=0;
     if(d.tipo==='parcelado'&&d.installments){
       parcelasCount=d.installments.filter(inst=>{if(!fMes)return true;const[y,mo]=inst.date.split('-');return mo===fMes&&y===fAno;}).length;
@@ -1868,7 +1736,7 @@ function gerarRelatorioHTML(){
 
   let fichas='';
   list.forEach(d=>{
-    const saldo=calcSaldo(d),stGlobal=getStatus(d);
+    const jv=calcJurosValor(d),saldo=calcSaldo(d),stGlobal=getStatus(d);
     let parcelasHtml='';
     let hasData=false;
 
@@ -1913,7 +1781,7 @@ function gerarRelatorioHTML(){
         <td><b>Data Início</b></td><td>${fmtDate(d.dataInicio)}</td>
         <td><b>Valor</b></td><td>R$ ${d.valor.toFixed(2)}</td>
         <td><b>Saldo</b></td><td style="color:${saldo===0?'#10b981':'#ef4444'};font-weight:700">R$ ${saldo.toFixed(2)}</td>
-        <td></td><td></td>
+        ${d.temJuros?`<td><b>Juros</b></td><td>${d.taxaJuros}% — SÓ JUROS: R$ ${jv.toFixed(2)}</td>`:'<td></td><td></td>'}
       </tr></table>
       <table class="ficha-parcelas"><thead><tr><th>Parcela</th><th>Data Venc.</th><th>Valor</th><th>Status</th></tr></thead><tbody>${parcelasHtml}</tbody></table>
       ${d.obs?`<div class="ficha-obs">📝 ${d.obs}</div>`:''}
@@ -2111,8 +1979,11 @@ function confirmAIImport(){
 // ══════════════════════════════════════════
 //  CONFIG JUROS
 // ══════════════════════════════════════════
+function openJurosConfig(){ document.getElementById('cfgJuros').value=config.taxaJurosDefault; openModal('jurosModal'); }
+function saveJurosConfig(){
   const v=parseFloat(document.getElementById('cfgJuros').value);
   if(isNaN(v)||v<0){showToast('⚠ Taxa inválida!','red');return;}
+  config.taxaJurosDefault=v; save(); closeModal('jurosModal'); showToast(`✅ Taxa padrão: ${v}%`,'green');
 }
 
 // ══════════════════════════════════════════
@@ -2371,7 +2242,7 @@ function renderListaClientes(tipo){
           <div class="name-initial" style="width:34px;height:34px;font-size:13px;flex-shrink:0">${c.inicial}</div>
           <div style="min-width:0">
             <div class="cliente-folder-name">${c.nome}</div>
-            <div style="font-size:10px;color:var(--muted);margin-top:2px">${FORMA_LABEL[c.forma]||c.forma} · ${c.tipoCliente==='parcelado'?'Parcelado':'Pagamento Único'}</div>
+            <div style="font-size:10px;color:var(--muted);margin-top:2px">${FORMA_LABEL[c.forma]||c.forma} · ${c.tipoCliente==='parcelado'?'Parcelado':'Pagamento Único'}${c.temJuros?` · 📈 ${c.taxaJuros}%`:''}</div>
           </div>
         </div>
         <div class="cliente-folder-arrow">›</div>
@@ -2402,7 +2273,8 @@ function renderListaParcelas(tipo, clienteId){
   const d = debtors.find(x => x.id === clienteId);
   if(!d) return;
 
-    const saldo = calcSaldo(d);
+  const jv = calcJurosValor(d);
+  const saldo = calcSaldo(d);
   const stGlobal = getStatus(d);
 
   // Filtrar parcelas conforme tipo
@@ -2447,7 +2319,7 @@ function renderListaParcelas(tipo, clienteId){
     <div class="name-initial" style="width:40px;height:40px;font-size:15px;flex-shrink:0">${fc}</div>
     <div style="flex:1;min-width:0">
       <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:15px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${d.nome}</div>
-      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:3px">${sb}<span style="font-size:11px;color:var(--muted)">${FORMA_LABEL[d.forma]||d.forma}</span></div>
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:3px">${sb}<span style="font-size:11px;color:var(--muted)">${FORMA_LABEL[d.forma]||d.forma}</span>${d.temJuros?`<span class="juros-badge">📈 ${d.taxaJuros}%</span>`:''}</div>
     </div>
     <div style="text-align:right;flex-shrink:0">
       <div style="font-size:10px;color:var(--muted);text-transform:uppercase;font-weight:700">Saldo Devedor</div>
@@ -2456,6 +2328,7 @@ function renderListaParcelas(tipo, clienteId){
   </div>`;
 
   if(d.obs) html += `<div style="background:var(--surface);padding:9px 13px;border-radius:var(--r-sm);font-size:12px;color:var(--muted2);margin-bottom:12px;border:1px solid var(--border)">📝 ${d.obs}</div>`;
+  if(d.temJuros && jv>0) html += `<div class="info-box" style="margin-bottom:12px">🟠 <strong>SÓ JUROS = ${fmtBRL(jv)}/mês</strong> — NÃO abate a parcela.</div>`;
 
   if(!parcelas.length){
     html += `<div class="empty-state" style="padding:2rem"><div class="e-icon">📭</div><h3>Nenhuma parcela nesta categoria</h3></div>`;
